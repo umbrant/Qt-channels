@@ -238,6 +238,8 @@ void QWSChannelServerSocket::init(const QString &file)
     assert(g_serverSocket == 0);
     g_serverSocket = this;
 
+    nbb_set_cb_new_connection( on_new_connection );
+
     if (init_service(SERVICE_MAX_CHANNELS, (char *) GUI)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;

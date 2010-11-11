@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <pthread.h>
+#include <pthread.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -92,13 +92,18 @@ struct buffer {
 
 // Initialize the shared memory
 //int init();
-int init_service(int num_channels, char* name); // TODO: num_channels should grow dynamic
-int connect_service(char* service_name);
+int init_service(int num_channels, const char* name); // TODO: num_channels should grow dynamic
+int connect_service(const char* service_name);
 int open_channel(int shm_read_id, int shm_write_id, int is_ipc_create);
 int close_channel(int channel_id);
 
+// Callback mechanisms for nbb events
+// Hardcode for now. We can generalize the function prototype later.
+typedef void (*cb_new_conn_func)(int slot_id);
+void nbb_set_cb_new_connection(cb_new_conn_func func);
+
 // Sending a message from client to server
-int client_send(char* service_name, char* msg);
+int client_send(const char* service_name, const char* msg);
 
 // Finds a free channel slot
 // Returns the index of the free slot, if it is full, returns -1
