@@ -105,7 +105,7 @@ int client_send(char* service_name, char* msg);
 int free_channel_slot();
 
 // Data is available from client, called via interrupt
-void recv_client_data();
+void recv_client_data(int signum);
 
 int insert_item(int channel_id, void* ptr_to_item, size_t size);
 int read_item(int channel_id, void** ptr_to_item, size_t* size);

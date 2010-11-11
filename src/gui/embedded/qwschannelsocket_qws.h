@@ -48,6 +48,8 @@
 #include <QtCore/qconfig.h>
 #include <QtGui/qwsutils_qws.h>
 
+#include "qchannelsocket_p.h"
+
 #ifndef QT_NO_QWS_MULTIPROCESS
 
 #ifndef QT_NO_SXE
@@ -66,7 +68,7 @@ QT_BEGIN_NAMESPACE
 QT_MODULE(Gui)
 
 
-class QWSChannelSocket : public QWS_SOCK_BASE
+class QWSChannelSocket : public QChannelSocket
 {
     Q_OBJECT
 public:

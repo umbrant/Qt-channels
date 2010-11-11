@@ -40,7 +40,7 @@
 ****************************************************************************/
 
 #include "qplatformdefs.h"
-#include "qwssocket_qws.h"
+#include "qwschannelsocket_qws.h"
 
 // Include the .c file for now.
 // TODO: Integrate NBB into Qt
@@ -58,6 +58,10 @@
 #include <sys/un.h>
 #include <assert.h>
 #include <stdlib.h>
+
+#include <iostream>
+
+using namespace std;
 
 #ifdef __MIPSEL__
 # ifndef SOCK_DGRAM
@@ -97,7 +101,9 @@ static QWSChannelServerSocket *g_serverSocket = 0;
 static void on_new_connection(int slot_id)
 {
     assert(g_serverSocket != 0);
+#ifndef QT_NO_SXE
     g_serverSocket->incomingConnection(slot_id);
+#endif
 }
 
 
@@ -167,7 +173,7 @@ void QWSChannelSocket::forwardStateChange(QUnixSocket::SocketState st  )
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
-    if (connect_service(GUI) < 0) {
+    if (connect_service((char *) GUI) < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
              << "Cannot connect to " << GUI << " service!" << endl;
         return false;
@@ -217,13 +223,12 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
  *
  **********************************************************************/
 QWSChannelServerSocket::QWSChannelServerSocket(const QString& file, QObject *parent)
-/*
+
 #ifndef QT_NO_SXE
     : QUnixSocketServer(parent)
 #else
     : QTcpServer(parent)
 #endif
-*/
 {
     init(file);
 }
@@ -233,7 +238,7 @@ void QWSChannelServerSocket::init(const QString &file)
     assert(g_serverSocket == 0);
     g_serverSocket = this;
 
-    if (init_service(SERVICE_MAX_CHANNELS, GUI)) {
+    if (init_service(SERVICE_MAX_CHANNELS, (char *) GUI)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;
         exit(-1);
