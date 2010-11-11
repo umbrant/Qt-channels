@@ -71,6 +71,16 @@ class Q_GUI_EXPORT QChannelSocket : public QIODevice
 {
     Q_OBJECT
 public:
+    enum SocketState {
+        UnconnectedState,
+        HostLookupState,
+        ConnectingState,
+        ConnectedState,
+        BoundState,
+        ListeningState,
+        ClosingState
+    };
+
     QChannelSocket(QObject * = 0);
     virtual ~QChannelSocket();
 
@@ -83,6 +93,10 @@ public:
     
     qint64 read(char * data, qint64 maxSize);
     QByteArray read(qint64 maxSize);
+
+    // Required for proper QAbstractSocket casting
+    int socketDescriptor();
+    SocketState state();
 
 //Q_SIGNALS:
 
