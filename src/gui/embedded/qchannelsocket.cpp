@@ -116,4 +116,14 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 	return 0;
 }
 
+int socketDescriptor()
+{
+    return 0;
+}
+
+QChannelSocket::SocketState state()
+{
+    return QChannelSocket::ConnectedState;
+}
+
 QT_END_NAMESPACE
