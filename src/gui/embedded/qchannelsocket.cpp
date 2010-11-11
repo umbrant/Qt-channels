@@ -101,12 +101,14 @@ qint64 QChannelSocket::bytesAvailable() const
   */
 qint64 QChannelSocket::bytesToWrite() const
 {
+    // Since we effectively always flush, I think returning 0 is cool.
     return 0;
 }
 
 /*! \internal */
 qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 {
+    // Supposed 
 	return 0;
 }
 
@@ -121,9 +123,9 @@ int socketDescriptor()
     return 0;
 }
 
-QChannelSocket::SocketState state()
+QAbstractSocket::SocketState state()
 {
-    return QChannelSocket::ConnectedState;
+    return QAbstractSocket::ConnectedState;
 }
 
 QT_END_NAMESPACE

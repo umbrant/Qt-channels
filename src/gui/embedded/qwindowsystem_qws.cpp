@@ -739,27 +739,10 @@ void QWSClientPrivate::unlockCommunication()
 QWSClient::QWSClient(QObject* parent, QWS_SOCK_BASE* sock, int id)
     : QObject(*new QWSClientPrivate, parent), command(0), cid(id)
 {
-    /*
 #ifdef QT_NO_QWS_MULTIPROCESS
     Q_UNUSED(sock);
     isClosed = false;
 #else
-    csocket = 0;
-    if (!sock) {
-        socketDescriptor = -1;
-        isClosed = false;
-    } else {
-        csocket = static_cast<QWSSocket*>(sock); //###
-        isClosed = false;
-
-        csocket->flush();
-        socketDescriptor = csocket->socketDescriptor();
-        connect(csocket, SIGNAL(readyRead()), this, SIGNAL(readyRead()));
-        connect(csocket, SIGNAL(disconnected()), this, SLOT(closeHandler()));
-        connect(csocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorHandler()));
-    }
-#endif //QT_NO_QWS_MULTIPROCESS
-*/
     csocket = 0;
     if (!sock) {
         socketDescriptor = -1;
@@ -774,6 +757,7 @@ QWSClient::QWSClient(QObject* parent, QWS_SOCK_BASE* sock, int id)
         connect(csocket, SIGNAL(disconnected()), this, SLOT(closeHandler()));
         connect(csocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorHandler()));
     }
+#endif //QT_NO_QWS_MULTIPROCESS
 }
 
 /*!
@@ -1575,6 +1559,8 @@ void QWSServerPrivate::_q_newConnection()
         QObject::connect(client, SIGNAL(connectionClosed()),
                 q, SLOT(_q_clientClosed()));
 #else
+        // NOTE: This is what we care about
+        // readyRead and connectionClosed need to be emitted correctly
         QObject::connect(client, SIGNAL(readyRead()),
                          q, SLOT(_q_doClient()));
         QObject::connect(client, SIGNAL(connectionClosed()),

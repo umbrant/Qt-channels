@@ -2,11 +2,13 @@
 
 embedded {
 	CONFIG -= opengl x11
-	LIBS -= -dl
+	LIBS -= -dl -lrt
 	KERNEL_P        = kernel
 
 	!mac:HEADERS += embedded/qsoundqss_qws.h
 	HEADERS += \
+		    embedded/constants.h \
+		    embedded/nbb.h \
 		    embedded/qchannelsocket_p.h \
 		    embedded/qcopchannel_qws.h \
 		    embedded/qdecoration_qws.h \
@@ -40,6 +42,7 @@ embedded {
 
 	 !mac:SOURCES += embedded/qsoundqss_qws.cpp
          SOURCES +=  \
+		    embedded/nbb.c \
 		    embedded/qchannelsocket.cpp \
 		    embedded/qcopchannel_qws.cpp \
 		    embedded/qdecoration_qws.cpp \
