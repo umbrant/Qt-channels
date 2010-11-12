@@ -200,7 +200,7 @@ int nbb_connect_service(const char* service_name)
  
 
     // Notify service of the new connection by sending a dummy message
-    if (nbb_client_send(service_name, notify_msg)) {
+    if (nbb_client_send(service_name, NOTIFY_MSG)) {
       printf("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     }
@@ -585,7 +585,7 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
   }
 
   if(size < 0) {
-    printf("! nbb_read_item(): invalid size %d\n", size);
+    printf("! nbb_read_item(): invalid size %d\n", *size);
     return -1;
   }
 
