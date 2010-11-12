@@ -76,7 +76,8 @@ QT_BEGIN_NAMESPACE
 QChannelSocket::QChannelSocket(QObject * parent)
 : QIODevice(parent)/*, d(new QChannelSocketPrivate(this))*/
 {
-    // TODO
+    slotNumber = -1;
+    sockState = QAbstractSocket::UnconnectedState;
 }
 
 /*!
@@ -93,7 +94,8 @@ QChannelSocket::~QChannelSocket()
   */
 qint64 QChannelSocket::bytesAvailable() const
 {
-    return 0;
+    qint64 avail =  nbb_bytes_available(slotNumber) + QIODevice::bytesAvailable();
+    return avail;
 }
 
 /*!
@@ -108,24 +110,35 @@ qint64 QChannelSocket::bytesToWrite() const
 /*! \internal */
 qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 {
-    // Supposed 
-	return 0;
+	qint64 bytes = nbb_read_bytes(slotNumber, data, maxSize);
+	return bytes;
 }
 
 /*! \internal */
 qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 {
-	return 0;
+    int ret = nbb_insert_item(slotNumber, data, maxSize);
+	if(!ret) {
+	    printf("WRITE ERROR!\n");
+	}
+	return maxSize;
 }
 
-int socketDescriptor()
+int QChannelSocket::socketDescriptor()
 {
-    return 0;
+    return slotNumber;
 }
 
-QAbstractSocket::SocketState state()
+bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode)
 {
-    return QAbstractSocket::ConnectedState;
+    slotNumber = socketDescriptor;
+    sockState = socketState;
+    return true;
+}
+
+QAbstractSocket::SocketState QChannelSocket::state()
+{
+    return sockState;
 }
 
 QT_END_NAMESPACE

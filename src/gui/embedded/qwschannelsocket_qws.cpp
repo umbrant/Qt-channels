@@ -45,7 +45,7 @@
 // Include the .c file for now.
 // TODO: Integrate NBB into Qt
 #include "nbb.h"
-#include "nbb.c"
+//#include "nbb.c"
 
 #ifndef QT_NO_QWS_MULTIPROCESS
 
@@ -173,7 +173,7 @@ void QWSChannelSocket::forwardStateChange(QUnixSocket::SocketState st  )
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
-    if (connect_service((char *) GUI) < 0) {
+    if (::nbb_connect_service((char *) GUI) < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
              << "Cannot connect to " << GUI << " service!" << endl;
         return false;
@@ -213,7 +213,6 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
     }
 #endif
 */
-    return true;
 }
 
 
@@ -238,9 +237,9 @@ void QWSChannelServerSocket::init(const QString &file)
     assert(g_serverSocket == 0);
     g_serverSocket = this;
 
-    nbb_set_cb_new_connection( on_new_connection );
+    ::nbb_set_cb_new_connection( on_new_connection );
 
-    if (init_service(SERVICE_MAX_CHANNELS, (char *) GUI)) {
+    if (::nbb_init_service(SERVICE_MAX_CHANNELS, (char *) GUI)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;
         exit(-1);

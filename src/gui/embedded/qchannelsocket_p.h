@@ -58,6 +58,8 @@
 #include <QtCore/qlist.h>
 #include <QtCore/qshareddata.h>
 
+#include "nbb.h"
+
 extern "C" {
 #include <sys/types.h>
 };
@@ -71,6 +73,7 @@ class Q_GUI_EXPORT QChannelSocket : public QIODevice
 {
     Q_OBJECT
 public:
+        /*
     enum SocketState {
         UnconnectedState,
         HostLookupState,
@@ -80,6 +83,7 @@ public:
         ListeningState,
         ClosingState
     };
+    */
 
     QChannelSocket(QObject * = 0);
     virtual ~QChannelSocket();
@@ -96,6 +100,7 @@ public:
 
     // Required for proper QAbstractSocket casting
     int socketDescriptor();
+    bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
     QAbstractSocket::SocketState state();
 
 //Q_SIGNALS:
@@ -107,6 +112,8 @@ protected:
 private:
     QChannelSocket(const QChannelSocket &);
     QChannelSocket & operator=(const QChannelSocket &);
+    int slotNumber;
+    QAbstractSocket::SocketState sockState;
 
 Q_SIGNALS:
     // TODO: make readyRead actually work properly. Necessary.
