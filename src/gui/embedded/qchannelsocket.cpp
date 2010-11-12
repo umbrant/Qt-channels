@@ -41,6 +41,11 @@
 
 #include "qchannelsocket_p.h"
 
+#include <assert.h>
+#include <map>
+
+using namespace std;
+
 // #define QUNIXSOCKET_DEBUG 1
 
 /*
@@ -65,6 +70,22 @@ extern "C" {
 
 QT_BEGIN_NAMESPACE
 
+/***********************
+  HELPER FUNCTION/DATA
+ **********************/
+
+// Global channel client socket mappings from slot ID to sockets
+static map<int, QChannelSocket> g_clientSocketMap;
+
+// Function to handle new incoming data
+static void on_new_available_data(int slot_id)
+{
+    assert(g_clientSocketMap.size() > 0);
+    QChannelSocket *socket = g_clientSocketMap[slot_id];
+    assert(socket != 0);
+    socket->emitReadyRead();
+}
+
 /*!
   Construct a QChannelSocket instance, with \a parent.
 
@@ -78,6 +99,9 @@ QChannelSocket::QChannelSocket(QObject * parent)
 {
     slotNumber = -1;
     sockState = QAbstractSocket::UnconnectedState;
+
+    // Register for new incoming data event from nbb
+    nbb_set_cb_new_data( on_new_available_data );
 }
 
 /*!
@@ -86,6 +110,14 @@ QChannelSocket::QChannelSocket(QObject * parent)
 QChannelSocket::~QChannelSocket()
 {
     // TODO
+}
+
+/*!
+ Emits ready read signal whenever there is data to read
+ */
+QChannelSocket::emitReadyRread() const
+{
+    emit readyRead();
 }
 
 /*!
@@ -132,8 +164,14 @@ int QChannelSocket::socketDescriptor()
 
 bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode)
 {
+    assert(slotNumber);
+
     slotNumber = socketDescriptor;
     sockState = socketState;
+
+    // Assume this method is called ONCE as checked by the assertion above
+    g_clientSocketMap[slotNumber] = this;
+
     return true;
 }
 
