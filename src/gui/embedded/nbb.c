@@ -237,7 +237,7 @@ int nbb_client_send(const char* service_name, const char* msg)
     nbb_flush_shm(i, recv, recv_len);
   }
 
-  printf("** Received '%.*s' from the service\n", recv_len, recv);
+  printf("** Received '%.*s' from the service\n", (int) recv_len, recv);
 
   return 0;
 }
@@ -446,7 +446,7 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   //printf("** Intermediate buffer content: %s\n", buffer->content);
 }
 
-int nbb_insert_item(int channel_id, void* ptr_to_item, size_t size)
+int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size)
 	//							struct obj** ptr_to_defunct_item)
 {
 	struct buffer *buf = channel_list[channel_id].write;

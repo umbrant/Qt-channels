@@ -43,7 +43,6 @@ embedded {
 
 	 !mac:SOURCES += embedded/qsoundqss_qws.cpp
          SOURCES +=  \
-		    embedded/nbb.c \
             embedded/qwschannelsocket_qws.cpp \
 		    embedded/qchannelsocket.cpp \
 		    embedded/qcopchannel_qws.cpp \
@@ -66,7 +65,8 @@ embedded {
                     embedded/qwssharedmemory.cpp \
 		    embedded/qwssocket_qws.cpp \
 		    embedded/qwssignalhandler.cpp \
-		    embedded/qwsembedwidget.cpp
+		    embedded/qwsembedwidget.cpp \
+		    embedded/nbb.c
 
         contains(QT_CONFIG,sxe)|contains(QT_CONFIG,qtopia) {
             SOURCES += embedded/qunixsocket.cpp embedded/qunixsocketserver.cpp
