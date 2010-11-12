@@ -1371,6 +1371,7 @@ void QWSServerPrivate::initServer(int flags)
     ssocket = new QWSChannelServerSocket(qws_qtePipeFilename(), q);
     QObject::connect(ssocket, SIGNAL(newConnection()), q, SLOT(_q_newConnection()));
 
+    /*
     if ( !ssocket->isListening()) {
         perror("QWSServerPrivate::initServer: server socket not listening");
         qFatal("Failed to bind to %s", qws_qtePipeFilename().toLatin1().constData());
@@ -1380,7 +1381,7 @@ void QWSServerPrivate::initServer(int flags)
     tmp.l_onoff=1;
     tmp.l_linger=0;
     setsockopt(ssocket->socketDescriptor(),SOL_SOCKET,SO_LINGER,(char *)&tmp,sizeof(tmp));
-
+    */
 
     signal(SIGPIPE, ignoreSignal); //we get it when we read
 #endif
