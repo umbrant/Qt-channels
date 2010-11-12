@@ -105,13 +105,13 @@ typedef struct delay_buffer
 } delay_buffer_t;
 
 // Initialize the service 
-int nbb_init_service(int num_channels, char* name);
+int nbb_init_service(int num_channels, const char* name);
 
 // Client tries to connect to a certain service
-int nbb_connect_service(char* service_name);
+int nbb_connect_service(const char* service_name);
 
 // Communicate with the nameserver
-char* nbb_nameserver_connect(char* request);
+char* nbb_nameserver_connect(const char* request);
 
 // Open & close channels
 int nbb_open_channel(int shm_read_id, int shm_write_id, int is_ipc_create);

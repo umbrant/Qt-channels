@@ -7,6 +7,9 @@ delay_buffer_t delay_buffers[SERVICE_MAX_CHANNELS];
 
 sem_t *sem_id;   // POSIX semaphore
 
+// Assume maximum pid value of 16-bit
+#define PID_MAX_STRLEN 5
+
 // When a client nbb_connect_service()s to a service, this message is
 // sent to the service to note the new incoming connection.
 #define NOTIFY_MSG "**Q_Q**"
@@ -14,9 +17,9 @@ static const char *notify_msg = NOTIFY_MSG;
 static const int notify_msg_len = sizeof(NOTIFY_MSG) - 1;
 static cb_new_conn_func new_connection_callback = NULL;
 
-char* nbb_nameserver_connect(char* request)
+char* nbb_nameserver_connect(const char* request)
 {
-	int nameserver_pid = 0;
+  int nameserver_pid = 0;
   FILE* pFile;
   int retval;
   char* recv; 
@@ -64,12 +67,12 @@ int init_nameserver()
   return 0;
 }
 
-int nbb_init_service(int num_channels, char* name) 
+int nbb_init_service(int num_channels, const char* name) 
 {
-  char request[50];
+  char request[MAX_MSG_LEN];
   char num_channel[2]; // TODO: Make it constants?
   char* recv;
-  char pid[5];
+  char pid[PID_MAX_STRLEN + 1];
 
   sem_id = sem_open(SEM_KEY, 0);
   if(sem_id == SEM_FAILED) {
@@ -128,9 +131,9 @@ int nbb_init_service(int num_channels, char* name)
 
 // Called by clients connecting to a server
 // Needs to map shm buffers into client's address space
-int nbb_connect_service(char* service_name) 
+int nbb_connect_service(const char* service_name) 
 {
-  char request[50];
+  char request[MAX_MSG_LEN];
   int ret_code;
   char* recv;
 
@@ -175,7 +178,7 @@ int nbb_connect_service(char* service_name)
 
     slot = nbb_open_channel(channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
 
-    services_used[slot].service_name = (char*)malloc(sizeof(char)*50);
+    services_used[slot].service_name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
     strcpy(services_used[slot].service_name, service_name);
     services_used[slot].pid = service_pid;
    
@@ -205,7 +208,8 @@ void nbb_set_cb_new_connection(cb_new_conn_func func)
 int nbb_client_send(const char* service_name, const char* msg)
 {
   int i;
-  char* new_msg = (char*)calloc(strlen(msg), sizeof(char));
+  size_t msg_len = strlen(msg);
+  char* new_msg = (char*)calloc(msg_len + 1, sizeof(char));
   char* recv;
   size_t recv_len;
   int retval;
@@ -224,7 +228,7 @@ int nbb_client_send(const char* service_name, const char* msg)
   }
 
   strcpy(new_msg, msg); 
-  nbb_insert_item(i, new_msg, strlen(new_msg)+1); 
+  nbb_insert_item(i, new_msg, msg_len+1); 
   kill(services_used[i].pid, SIGUSR1);
 
   printf("** Send '%s' to %s\n", msg, service_name);
@@ -413,6 +417,8 @@ int nbb_read_bytes(int slot, char* buf, int size)
 
   channel_list[slot].read_count += size;
 
+  free(tmp);
+
   return size;
 }
 
@@ -444,6 +450,7 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   buffer->len += size - 1;
 
   //printf("** Intermediate buffer content: %s\n", buffer->content);
+  free(tmp);
 }
 
 int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size)
