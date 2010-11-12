@@ -295,7 +295,8 @@ private:
 #endif
 
 #ifndef QT_NO_QWS_MULTIPROCESS
-    QWSServerSocket *ssocket;
+    //QWSServerSocket *ssocket;
+    QWSChannelServerSocket *ssocket;
 #endif
 
     // filename -> refcount
