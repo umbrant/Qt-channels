@@ -1368,7 +1368,7 @@ void QWSServerPrivate::initServer(int flags)
     qwsServerPrivate = this;
     disablePainting = false;
 #ifndef QT_NO_QWS_MULTIPROCESS
-    ssocket = new QWSServerSocket(qws_qtePipeFilename(), q);
+    ssocket = new QWSChannelServerSocket(qws_qtePipeFilename(), q);
     QObject::connect(ssocket, SIGNAL(newConnection()), q, SLOT(_q_newConnection()));
 
     if ( !ssocket->isListening()) {

@@ -121,6 +121,7 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 	if(!ret) {
 	    printf("WRITE ERROR!\n");
 	}
+	emit bytesWritten(maxSize);
 	return maxSize;
 }
 
