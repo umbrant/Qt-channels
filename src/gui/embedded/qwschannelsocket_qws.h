@@ -42,8 +42,8 @@
 **
 ****************************************************************************/
 
-#ifndef QWSSOCKET_QWS_H
-#define QWSSOCKET_QWS_H
+#ifndef QWSCHANNELSSOCKET_QWS_H
+#define QWSCHANNELSSOCKET_QWS_H
 
 #include <QtCore/qconfig.h>
 #include <QtGui/qwsutils_qws.h>
@@ -122,4 +122,4 @@ QT_END_HEADER
 
 #endif // QT_NO_QWS_MULTIPROCESS
 
-#endif // QWSSOCKET_QWS_H
+#endif // QWSCHANNELSSOCKET_QWS_H

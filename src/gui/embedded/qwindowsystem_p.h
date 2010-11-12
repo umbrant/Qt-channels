@@ -60,6 +60,7 @@
 #include "qwsproperty_qws.h"
 #include "qwscommand_qws_p.h"
 #include "QtCore/qbasictimer.h"
+#include "qwschannelsocket_qws.h"
 
 QT_BEGIN_NAMESPACE
 
