@@ -75,7 +75,7 @@ QT_BEGIN_NAMESPACE
  **********************/
 
 // Global channel client socket mappings from slot ID to sockets
-static map<int, QChannelSocket> g_clientSocketMap;
+static map<int, QChannelSocket*> g_clientSocketMap;
 
 // Function to handle new incoming data
 static void on_new_available_data(int slot_id)
@@ -115,7 +115,7 @@ QChannelSocket::~QChannelSocket()
 /*!
  Emits ready read signal whenever there is data to read
  */
-QChannelSocket::emitReadyRread() const
+void QChannelSocket::emitReadyRead()
 {
     emit readyRead();
 }

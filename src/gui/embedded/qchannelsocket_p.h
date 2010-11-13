@@ -91,7 +91,7 @@ public:
     qint64 bytesAvailable() const;
     qint64 bytesToWrite() const;
 
-    void emitReadyRead() const;
+    void emitReadyRead();
 
     qint64 write(const char * data, qint64 maxSize);
     qint64 write(const QByteArray & byteArray);

@@ -120,7 +120,7 @@ int nbb_init_service(int num_channels, const char* name)
     char* tmp;
 
     tmp = strtok(recv, " ");
-    for(i = 0;i < num_channels;i++) { 
+    for(i = 1;i < num_channels;i++) { 
       channel = atoi(tmp);
       if(nbb_open_channel(channel, channel + READ_WRITE_CONV, IPC_CREAT) == -1) {
         //TODO: service_exit();
@@ -200,7 +200,7 @@ int nbb_connect_service(const char* service_name)
  
 
     // Notify service of the new connection by sending a dummy message
-    if (nbb_client_send(service_name, NOTIFY_MSG)) {
+    if (nbb_client_send(service_name, NEW_CONN_NOTIFY_MSG)) {
       printf("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     }
@@ -238,7 +238,7 @@ int nbb_client_send(const char* service_name, const char* msg)
   }
 
   // Since i = 0 is already reserved for nameserver
-  for(i = 1;i < SERVICE_MAX_CHANNELS;i++) {
+  for(i = 1; i < SERVICE_MAX_CHANNELS;i++) {
     if(channel_list[i].in_use && 
        !strcmp(service_name, services_used[i].service_name)) {
       break;
@@ -328,6 +328,7 @@ int nbb_open_channel(int shm_read_id, int shm_write_id, int is_ipc_create)
 
   free_slot = nbb_free_channel_slot();
   if(free_slot == -1) {
+	perror("! nbb_open_channel(): no free_slot\n");
     return -1;
   }
 
@@ -503,7 +504,7 @@ int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size)
   }
 
   if(size < 0) {
-    printf("! nbb_insert_item(): invalid item size %d\n", size);
+    printf("! nbb_insert_item(): invalid item size %lu\n", size);
     return -1;
   }
  
@@ -585,7 +586,7 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
   }
 
   if(size < 0) {
-    printf("! nbb_read_item(): invalid size %d\n", *size);
+    printf("! nbb_read_item(): invalid size %lu\n", *size);
     return -1;
   }
 
