@@ -39,6 +39,8 @@
 **
 ****************************************************************************/
 
+#if 0
+
 #include "qplatformdefs.h"
 #include "qwssocket_qws.h"
 
@@ -278,3 +280,5 @@ QWSSocket *QWSServerSocket::nextPendingConnection()
 QT_END_NAMESPACE
 
 #endif  //QT_NO_QWS_MULTIPROCESS
+
+#endif  // #if 0

@@ -42,6 +42,8 @@
 **
 ****************************************************************************/
 
+#if 0
+
 #ifndef QWSSOCKET_QWS_H
 #define QWSSOCKET_QWS_H
 
@@ -121,3 +123,5 @@ QT_END_HEADER
 #endif // QT_NO_QWS_MULTIPROCESS
 
 #endif // QWSSOCKET_QWS_H
+
+#endif // #if 0
