@@ -69,6 +69,7 @@
 
 #include <qvfbhdr.h>
 
+
 extern int errno;
 
 QT_BEGIN_NAMESPACE

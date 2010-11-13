@@ -157,6 +157,15 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 	return maxSize;
 }
 
+qint64 QChannelSocket::write(const QByteArray & byteArray) {
+    return QChannelSocket::write(byteArray.data(), byteArray.length());
+}
+
+qint64 QChannelSocket::write(const char * data, qint64 maxSize) {
+    return writeData(data, maxSize);
+}
+
+
 int QChannelSocket::socketDescriptor()
 {
     return slotNumber;
@@ -181,7 +190,7 @@ QAbstractSocket::SocketState QChannelSocket::state()
 }
 
 /* Writes always flush, so return false */
-bool flush() {
+bool QChannelSocket::flush() {
     return false;
 }
 

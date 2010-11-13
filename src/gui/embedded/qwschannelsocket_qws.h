@@ -52,8 +52,9 @@
 
 #ifndef QT_NO_QWS_MULTIPROCESS
 
-#ifndef QT_NO_SXE
 #include <QtCore/qmutex.h>
+
+#ifndef QT_NO_SXEd
 #include <QtGui/private/qunixsocketserver_p.h>
 #include <QtGui/private/qunixsocket_p.h>
 #else
@@ -67,6 +68,35 @@ QT_BEGIN_NAMESPACE
 
 QT_MODULE(Gui)
 
+class QWSChannelSocket;
+class QWSChannelServerSocket;
+
+#if 0
+class QChannelServer : public QObject
+{
+    Q_OBJECT
+public:
+    QChannelServer(QObject *parent=0);
+    QChannelServer(const QString& file, QObject *parent=0);
+    ~QChannelServer();
+
+//#ifndef QT_NO_SXE
+    virtual QWSChannelSocket *nextPendingConnection();
+Q_SIGNALS:
+    void newConnection();
+protected:
+    void incomingConnection(int socketDescriptor);
+private:
+    QMutex ssmx;
+    QList<int> inboundConnections;
+//#endif
+
+private:
+    //Q_DISABLE_COPY(QWSChannelServerSocket)
+    void init(const QString &file);
+};
+#endif
+
 
 class QWSChannelSocket : public QChannelSocket
 {
@@ -79,7 +109,7 @@ public:
 
     bool flush();
 
-#ifndef QT_NO_SXE
+//#ifndef QT_NO_SXE
     QString errorString();
 Q_SIGNALS:
     void connected();
@@ -87,30 +117,30 @@ Q_SIGNALS:
     void error(QAbstractSocket::SocketError);
 private Q_SLOTS:
     void forwardStateChange(SocketState);
-#endif
+//#endif
 
 private:
     Q_DISABLE_COPY(QWSChannelSocket)
 };
 
 
-class QWSChannelServerSocket : public QWS_SOCK_SERVER_BASE
+class QWSChannelServerSocket : public QObject
 {
     Q_OBJECT
 public:
+    QWSChannelServerSocket(QObject *parent=0);
     QWSChannelServerSocket(const QString& file, QObject *parent=0);
     ~QWSChannelServerSocket();
 
-#ifndef QT_NO_SXE
+//#ifndef QT_NO_SXE
     QWSChannelSocket *nextPendingConnection();
+    void incomingConnection(int socketDescriptor);
 Q_SIGNALS:
     void newConnection();
-protected:
-    void incomingConnection(int socketDescriptor);
 private:
     QMutex ssmx;
     QList<int> inboundConnections;
-#endif
+//#endif
 
 private:
     Q_DISABLE_COPY(QWSChannelServerSocket)

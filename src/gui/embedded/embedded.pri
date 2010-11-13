@@ -41,7 +41,6 @@ embedded {
 		    embedded/qchannelsocket_p.h \
 		    embedded/qwsembedwidget.h
 
-	 !mac:SOURCES += embedded/qsoundqss_qws.cpp
          SOURCES +=  \
 		    embedded/qcopchannel_qws.cpp \
 		    embedded/qdecoration_qws.cpp \
@@ -66,6 +65,7 @@ embedded {
 		    embedded/qwsembedwidget.cpp \
             embedded/qwschannelsocket_qws.cpp \
 		    embedded/qchannelsocket.cpp \
+			embedded/qsoundqss_qws.cpp \
 		    embedded/nbb.c
 
         contains(QT_CONFIG,sxe)|contains(QT_CONFIG,qtopia) {

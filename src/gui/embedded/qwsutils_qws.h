@@ -58,10 +58,11 @@ class QUnixSocket;
 class QUnixSocketServer;
 #else
 //#define QWS_SOCK_BASE QTcpSocket
+//#define QWS_SOCK_SERVER_BASE QTcpServer
 #define QWS_SOCK_BASE QChannelSocket
-#define QWS_SOCK_SERVER_BASE QTcpServer
-class QTcpSocket;
-class QTcpServer;
+#define QWS_SOCK_SERVER_BASE QWSChannelServerSocket
+class QChannelSocket;
+class QWSChannelServerSocket;
 #endif
 class QWSSocket;
 class QWSServerSocket;
