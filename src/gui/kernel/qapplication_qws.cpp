@@ -513,7 +513,7 @@ QWSDisplay::Data::Data(QObject* parent, bool singleProcess)
     if (singleProcess)
         csocket = 0;
     else {
-        csocket = new QWSSocket(parent);
+        csocket = new QWSChannelSocket(parent);
         QObject::connect(csocket, SIGNAL(disconnected()),
                          qApp, SLOT(quit()));
     }
@@ -743,7 +743,7 @@ void QWSDisplay::Data::reinit( const QString& newAppName )
     appName = newAppName;
     qApp->setObjectName( appName );
 
-    csocket = static_cast<QWSSocket*>(new QWSChannelSocket());
+    csocket = static_cast<QWSChannelSocket*>(new QWSChannelSocket());
     QObject::connect(csocket, SIGNAL(disconnected()),
                      qApp, SLOT(quit()));
     csocket->connectToLocalFile(pipe);

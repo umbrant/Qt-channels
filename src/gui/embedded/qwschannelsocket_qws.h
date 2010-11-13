@@ -77,6 +77,8 @@ public:
 
     bool connectToLocalFile(const QString &file);
 
+    bool flush();
+
 #ifndef QT_NO_SXE
     QString errorString();
 Q_SIGNALS:

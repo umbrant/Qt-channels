@@ -748,7 +748,7 @@ QWSClient::QWSClient(QObject* parent, QWS_SOCK_BASE* sock, int id)
         socketDescriptor = -1;
         isClosed = false;
     } else {
-        csocket = static_cast<QWSSocket*>(sock); //###
+        csocket = static_cast<QWSChannelSocket*>(sock); //###
         isClosed = false;
 
         //csocket->flush();

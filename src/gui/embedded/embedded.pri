@@ -7,10 +7,6 @@ embedded {
 
 	!mac:HEADERS += embedded/qsoundqss_qws.h
 	HEADERS += \
-		    embedded/constants.h \
-		    embedded/nbb.h \
-            embedded/qwschannelsocket_qws.h \
-		    embedded/qchannelsocket_p.h \
 		    embedded/qcopchannel_qws.h \
 		    embedded/qdecoration_qws.h \
 		    embedded/qdecorationfactory_qws.h \
@@ -39,12 +35,14 @@ embedded {
 		    embedded/qwsutils_qws.h \
                     embedded/qwssharedmemory_p.h \
 		    embedded/qwssignalhandler_p.h \
+		    embedded/constants.h \
+		    embedded/nbb.h \
+            embedded/qwschannelsocket_qws.h \
+		    embedded/qchannelsocket_p.h \
 		    embedded/qwsembedwidget.h
 
 	 !mac:SOURCES += embedded/qsoundqss_qws.cpp
          SOURCES +=  \
-            embedded/qwschannelsocket_qws.cpp \
-		    embedded/qchannelsocket.cpp \
 		    embedded/qcopchannel_qws.cpp \
 		    embedded/qdecoration_qws.cpp \
 		    embedded/qdecorationfactory_qws.cpp \
@@ -66,6 +64,8 @@ embedded {
 		    embedded/qwssocket_qws.cpp \
 		    embedded/qwssignalhandler.cpp \
 		    embedded/qwsembedwidget.cpp \
+            embedded/qwschannelsocket_qws.cpp \
+		    embedded/qchannelsocket.cpp \
 		    embedded/nbb.c
 
         contains(QT_CONFIG,sxe)|contains(QT_CONFIG,qtopia) {

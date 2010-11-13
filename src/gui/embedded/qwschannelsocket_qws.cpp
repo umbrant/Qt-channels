@@ -215,6 +215,11 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
 */
 }
 
+// Do nothing in our channels implementation
+bool QWSChannelSocket::flush()
+{
+    return true;
+}
 
 /***********************************************************************
  *
