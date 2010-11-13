@@ -180,4 +180,9 @@ QAbstractSocket::SocketState QChannelSocket::state()
     return sockState;
 }
 
+/* Writes always flush, so return false */
+bool flush() {
+    return false;
+}
+
 QT_END_NAMESPACE

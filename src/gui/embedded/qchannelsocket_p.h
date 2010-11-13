@@ -73,7 +73,6 @@ class Q_GUI_EXPORT QChannelSocket : public QIODevice
 {
     Q_OBJECT
 public:
-        /*
     enum SocketState {
         UnconnectedState,
         HostLookupState,
@@ -83,7 +82,6 @@ public:
         ListeningState,
         ClosingState
     };
-    */
 
     QChannelSocket(QObject * = 0);
     virtual ~QChannelSocket();
@@ -103,6 +101,7 @@ public:
     int socketDescriptor();
     bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
     QAbstractSocket::SocketState state();
+    bool flush();
 
 protected:
     qint64 readData(char * data, qint64 maxSize);
