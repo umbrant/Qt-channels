@@ -65,6 +65,7 @@ src/gui/symbian/
 src/gui/text/
 src/gui/util/
 src/gui/widgets/
+src/gui/embedded/qsoundqss_qws.cpp
 src/imports/
 src/multimedia/
 src/network/.moc/
