@@ -43,6 +43,8 @@
 
 #include <assert.h>
 #include <map>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -100,8 +102,12 @@ QChannelSocket::QChannelSocket(QObject * parent)
     slotNumber = -1;
     sockState = QAbstractSocket::UnconnectedState;
 
+    // Form a unique client name for nbb callback purposes
+    stringstream client_name;
+    client_name << "qchannelsocket@" << this;
+
     // Register for new incoming data event from nbb
-    nbb_set_cb_new_data( on_new_available_data );
+    nbb_set_cb_new_data(const_cast<char*>(client_name.str().c_str()), on_new_available_data);
 }
 
 /*!
@@ -173,12 +179,12 @@ int QChannelSocket::socketDescriptor()
 
 bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode)
 {
-    assert(slotNumber);
-
     slotNumber = socketDescriptor;
     sockState = socketState;
 
-    // Assume this method is called ONCE as checked by the assertion above
+    // Keep mapping from slot ID to client socket so that inside the callback
+    // function (which has slot ID as argument), we can identify the client
+    // socket object.
     g_clientSocketMap[slotNumber] = this;
 
     return true;

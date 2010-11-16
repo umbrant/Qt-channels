@@ -15,11 +15,7 @@ sem_t *sem_id;   // POSIX semaphore
 #define NEW_CONN_NOTIFY_MSG "**Q_Q**"
 #define NEW_CONN_NOTIFY_MSG_LEN (sizeof(NEW_CONN_NOTIFY_MSG) - 1)
 
-// Callback functions
-static cb_new_conn_func callback_new_connection = NULL;
-static cb_new_data_func callback_new_data = NULL;
-
-char* nbb_nameserver_connect(const char* request)
+int nbb_nameserver_connect(const char* request, char** ret, int* ret_len)
 {
   int nameserver_pid = 0;
   FILE* pFile;
@@ -28,8 +24,8 @@ char* nbb_nameserver_connect(const char* request)
   size_t recv_len;
 
   // Should be reversed since what's written by service is read by nameserver
-  if(nbb_open_channel(NAMESERVER_WRITE, NAMESERVER_READ, !IPC_CREAT)) {
-    return NULL;
+  if(nbb_open_channel(NULL, NAMESERVER_WRITE, NAMESERVER_READ, !IPC_CREAT)) {
+    return -1;
   }
 
   pFile = fopen(NAMESERVER_PID_FILE, "r+"); 
@@ -39,11 +35,17 @@ char* nbb_nameserver_connect(const char* request)
   nbb_insert_item(0, request, strlen(request));
   kill(nameserver_pid, SIGUSR1);
 
+  // Poll until we get something
   do{ 
     retval = nbb_read_item(0, (void**)&recv, &recv_len);
   } while (retval == BUFFER_EMPTY || retval == BUFFER_EMPTY_PRODUCER_INSERTING);
 
-  return recv;
+  // Set return values
+  *ret = recv;
+  *ret_len = recv_len;
+
+  // No errors, we're happy
+  return 0;
 }
 
 int init_nameserver()
@@ -57,8 +59,8 @@ int init_nameserver()
     return -1;
   }
 
-  if(nbb_open_channel(NAMESERVER_READ, NAMESERVER_WRITE, IPC_CREAT)) {
-    perror("! Unable to open channel\n");
+  if(nbb_open_channel(NULL, NAMESERVER_READ, NAMESERVER_WRITE, IPC_CREAT)) {
+    printf("! Unable to open channel\n");
     return -1;
   }
 
@@ -71,9 +73,8 @@ int init_nameserver()
 
 int nbb_init_service(int num_channels, const char* name) 
 {
-  char request[MAX_MSG_LEN];
+  char request[MAX_MSG_LEN] = {};
   char num_channel[2]; // TODO: Make it constants?
-  char* recv;
   char pid[PID_MAX_STRLEN + 1];
 
   if(num_channels < 0) {
@@ -81,7 +82,7 @@ int nbb_init_service(int num_channels, const char* name)
   }
 
   if(!name) {
-    perror("! nbb_init_service(): Null name\n");
+    printf("! nbb_init_service(): Null name\n");
   }
 
   sem_id = sem_open(SEM_KEY, 0);
@@ -104,7 +105,16 @@ int nbb_init_service(int num_channels, const char* name)
   strcat(request, " ");
   strcat(request, pid);
 
-  recv = nbb_nameserver_connect(request);
+  printf("request: %s, len: %zu\n", request, strlen(request));
+
+  char* recv;
+  int recv_len;
+  
+  if(nbb_nameserver_connect(request, &recv, &recv_len)) {
+    printf("! nbb_init_service(): Could not connect to nameserver\n");
+    sem_post(sem_id);
+    return -1;
+  }
 
   if(!strcmp(recv, NAMESERVER_CHANNEL_FULL)) {
     printf("! nbb_init_service(): Reserving channel unsuccessful\n");
@@ -120,12 +130,13 @@ int nbb_init_service(int num_channels, const char* name)
     char* tmp;
 
     tmp = strtok(recv, " ");
-    for(i = 1;i < num_channels;i++) { 
+    for(i = 1;i <= num_channels;i++) { 
       channel = atoi(tmp);
-      if(nbb_open_channel(channel, channel + READ_WRITE_CONV, IPC_CREAT) == -1) {
+      if(nbb_open_channel(name, channel, channel + READ_WRITE_CONV, IPC_CREAT) == -1) {
         //TODO: service_exit();
         printf("! nbb_init_service(): Failed to open the %d-th channel\n", i);
         sem_post(sem_id);
+        free(recv);
         return -1;
       }
       tmp = strtok(NULL, " ");
@@ -134,6 +145,7 @@ int nbb_init_service(int num_channels, const char* name)
     signal(SIGUSR1, nbb_recv_client_data);
 
     sem_post(sem_id);
+    free(recv);
     return 0;
   }
   // END CRITICAL SECTION
@@ -145,10 +157,9 @@ int nbb_connect_service(const char* service_name)
 {
   char request[MAX_MSG_LEN];
   int ret_code;
-  char* recv;
 
   if(!service_name) {
-    perror("! nbb_connect_service(): Null name\n");
+    printf("! nbb_connect_service(): Null name\n");
   }
 
   sem_id = sem_open(SEM_KEY, 0);
@@ -163,7 +174,12 @@ int nbb_connect_service(const char* service_name)
   strcat(request, " ");
   strcat(request, service_name);
 
-  recv = nbb_nameserver_connect(request);
+  char* recv;
+  int recv_len;
+  if(nbb_nameserver_connect(request, &recv, &recv_len)) {
+    printf("! nbb_connect_service(): Could not connect to nameserver!\n");
+    return -1;
+  } 
 
   if(!recv) {
     ret_code = -1;
@@ -190,7 +206,7 @@ int nbb_connect_service(const char* service_name)
     tmp = strtok(NULL, " ");
     service_pid = atoi(tmp);
 
-    slot = nbb_open_channel(channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
+    slot = nbb_open_channel(NULL, channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
 
     services_used[slot].service_name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
     strcpy(services_used[slot].service_name, service_name);
@@ -200,7 +216,7 @@ int nbb_connect_service(const char* service_name)
  
 
     // Notify service of the new connection by sending a dummy message
-    if (nbb_client_send(service_name, NEW_CONN_NOTIFY_MSG)) {
+    if (nbb_client_send(service_name, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN)) {
       printf("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     }
@@ -214,27 +230,50 @@ int nbb_connect_service(const char* service_name)
 	return ret_code;
 }
 
-void nbb_set_cb_new_connection(cb_new_conn_func func)
-{
-    callback_new_connection = func;
-}
-
-void nbb_set_cb_new_data(cb_new_data_func func)
-{
-    callback_new_data = func;
-}
-
-int nbb_client_send(const char* service_name, const char* msg)
+void nbb_set_cb_new_connection(char* owner, cb_new_conn_func func, void* arg)
 {
   int i;
-  size_t msg_len = strlen(msg);
-  char* new_msg;
+  for(i = 1;i < SERVICE_MAX_CHANNELS;i++) {
+    if(!channel_list[i].in_use) {
+      continue;
+    }
+
+    if(channel_list[i].owner && !strcmp(owner, channel_list[i].owner)) {
+      channel_list[i].new_conn = func;
+      channel_list[i].arg = arg;
+    }
+  }
+}
+
+void nbb_set_cb_new_data(char* owner, cb_new_data_func func)
+{
+  int i;
+  for(i = 1;i < SERVICE_MAX_CHANNELS;i++) {
+    if(!channel_list[i].in_use) {
+      continue;
+    }
+
+    if(channel_list[i].owner && !strcmp(owner, channel_list[i].owner)) {
+      channel_list[i].new_data = func;
+    }
+  }
+}
+
+int nbb_client_send(const char* service_name, const char* msg, size_t msg_len)
+{
+  int i;
   char* recv;
   size_t recv_len;
   int retval;
 
   if(!service_name || !msg) {
-    perror("! nbb_client_send(): missing service_name or msg\n");
+    printf("! nbb_client_send(): missing service_name or msg\n");
+    return -1;
+  }
+
+  if (msg_len == 0) {
+    printf("! nbb_client_send(): nothing to send (0 length passed in)\n");
+    return 0;
   }
 
   // Since i = 0 is already reserved for nameserver
@@ -246,17 +285,14 @@ int nbb_client_send(const char* service_name, const char* msg)
   }
 
   if(i == SERVICE_MAX_CHANNELS) {
-    perror("! nbb_client_send(): Service not found\n");
+    printf("! nbb_client_send(): Service not found\n");
     return -1;
   }
 
-  new_msg = (char*)calloc(msg_len + 1, sizeof(char));
-
-  strcpy(new_msg, msg); 
-  nbb_insert_item(i, new_msg, msg_len+1); 
+  nbb_insert_item(i, msg, msg_len); 
   kill(services_used[i].pid, SIGUSR1);
 
-  printf("** Send '%s' to %s\n", msg, service_name);
+  printf("** Send '%.*s' to %s\n", (int) msg_len, msg, service_name);
 
   do{ 
     retval = nbb_read_item(i, (void**)&recv, &recv_len);
@@ -271,6 +307,7 @@ int nbb_client_send(const char* service_name, const char* msg)
   return 0;
 }
 
+/* Called when the service gets new client data */
 void nbb_recv_client_data(int signum)
 {
   int i;
@@ -285,50 +322,58 @@ void nbb_recv_client_data(int signum)
 
     if(retval == OK) {
       // Notify of new connection on slot i
-      if (callback_new_connection != NULL) {
+      if (channel_list[i].new_conn != NULL) {
         // Received data includes null byte
-        if (recv_len == NEW_CONN_NOTIFY_MSG_LEN + 1 &&
-            memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN + 1) == 0) {
-            callback_new_connection(i);
+        if (recv_len == NEW_CONN_NOTIFY_MSG_LEN &&
+            memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN) == 0) {
+            channel_list[i].new_conn(i, channel_list[i].arg);
         }
       }
 
       // Notify event of new available data
-      if (callback_new_data != NULL) {
-        callback_new_data(i);
+      if (channel_list[i].new_data != NULL) {
+        channel_list[i].new_data(i);
       }
 
       printf("** Received '%.*s' from shm id %d\n",
              (int) recv_len, recv, channel_list[i].read_id);
 
-      reply_msg = (char*)calloc(recv_len, sizeof(char));
-
-      if(strcmp(recv, NEW_CONN_NOTIFY_MSG)) {
+      if(memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN+1)) {
         nbb_flush_shm(i, recv, recv_len);
       }
 
+      // XXX: This is for debugging. Remove before production.
       // Reply message
       //strcpy(reply_msg, "acknowledged the message: ");
-      strcat(reply_msg, recv);
+      reply_msg = (char*)calloc(recv_len, sizeof(char));
+      memcpy(reply_msg, recv, recv_len);
       nbb_insert_item(i, reply_msg, recv_len);
 
       recv_len = 0;
+      free(recv);
       free(reply_msg);
     }
+
   }
 
   signal(SIGUSR1, nbb_recv_client_data);
 }
 
-int nbb_open_channel(int shm_read_id, int shm_write_id, int is_ipc_create)
+int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)
 {
 	int shmid;
 	unsigned char * shm;
   int free_slot;
 
-  free_slot = nbb_free_channel_slot();
+  if(shm_read_id == NAMESERVER_WRITE && shm_write_id == NAMESERVER_READ) {
+    free_slot = 0;
+  }
+  else {
+    free_slot = nbb_free_channel_slot();
+  }
+
   if(free_slot == -1) {
-	perror("! nbb_open_channel(): no free_slot\n");
+	printf("! nbb_open_channel(): no free_slot\n");
     return -1;
   }
 
@@ -376,6 +421,11 @@ int nbb_open_channel(int shm_read_id, int shm_write_id, int is_ipc_create)
   channel_list[free_slot].write_count = 0;
 
   channel_list[free_slot].in_use = 1;
+
+  if(owner) {
+    channel_list[free_slot].owner = (char*)calloc(strlen(owner), sizeof(char));
+    strcpy(channel_list[free_slot].owner, owner);
+  }
 
   delay_buffers[free_slot].len = 0;
 

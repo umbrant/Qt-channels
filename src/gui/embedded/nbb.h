@@ -54,6 +54,16 @@ enum {
   SHM_ERROR
 };
 
+// Callback mechanisms for nbb events
+// Hardcode for now. We can generalize the function prototype later.
+
+// New connection event
+typedef void (*cb_new_conn_func)(int slot_id, void *arg);
+void nbb_set_cb_new_connection(char* owner, cb_new_conn_func func, void* arg);
+
+// New data event (available to read)
+typedef void (*cb_new_data_func)(int slot_id);
+void nbb_set_cb_new_data(char* owner, cb_new_data_func func);
 
 struct service_used {
   char* service_name;
@@ -71,6 +81,11 @@ struct channel {
 	unsigned char* write_data;
   int write_id;
   int write_count;
+
+  char* owner;
+  cb_new_conn_func new_conn;
+  cb_new_data_func new_data;
+  void* arg;
 
   int in_use;
 };
@@ -113,25 +128,14 @@ int nbb_init_service(int num_channels, const char* name);
 int nbb_connect_service(const char* service_name);
 
 // Communicate with the nameserver
-char* nbb_nameserver_connect(const char* request);
+int nbb_nameserver_connect(const char* request, char** ret, int* ret_len);
 
 // Open & close channels
-int nbb_open_channel(int shm_read_id, int shm_write_id, int is_ipc_create);
+int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create);
 int nbb_close_channel(int channel_id);
 
-// Callback mechanisms for nbb events
-// Hardcode for now. We can generalize the function prototype later.
-
-// New connection event
-typedef void (*cb_new_conn_func)(int slot_id);
-void nbb_set_cb_new_connection(cb_new_conn_func func);
-
-// New data event (available to read)
-typedef void (*cb_new_data_func)(int slot_id);
-void nbb_set_cb_new_data(cb_new_data_func func);
-
 // Sending a message from client to server
-int nbb_client_send(const char* service_name, const char* msg);
+int nbb_client_send(const char* service_name, const char* msg, size_t msg_len);
 
 // Finds a free channel slot
 // Returns the index of the free slot, if it is full, returns -1
