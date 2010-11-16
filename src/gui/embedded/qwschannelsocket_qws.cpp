@@ -211,7 +211,9 @@ void QWSChannelServerSocket::init(const QString &file)
 
     ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
 
-    if (::nbb_init_service(SERVICE_MAX_CHANNELS, service_name)) {
+    // TODO this is a hardcoded 5 constant. If we need more clients per
+    // server, increase this number
+    if (::nbb_init_service(5, service_name)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;
         exit(-1);
