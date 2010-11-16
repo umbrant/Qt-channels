@@ -105,7 +105,6 @@ int nbb_init_service(int num_channels, const char* name)
   strcat(request, " ");
   strcat(request, pid);
 
-  printf("** nbb_init_service almost done\n");
   printf("request: %s, len: %zu\n", request, strlen(request));
 
   char* recv;
@@ -308,6 +307,7 @@ int nbb_client_send(const char* service_name, const char* msg, size_t msg_len)
   return 0;
 }
 
+/* Called when the service gets new client data */
 void nbb_recv_client_data(int signum)
 {
   int i;
@@ -338,20 +338,22 @@ void nbb_recv_client_data(int signum)
       printf("** Received '%.*s' from shm id %d\n",
              (int) recv_len, recv, channel_list[i].read_id);
 
-      reply_msg = (char*)calloc(recv_len, sizeof(char));
-
-      if(strcmp(recv, NEW_CONN_NOTIFY_MSG)) {
+      if(memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN+1)) {
         nbb_flush_shm(i, recv, recv_len);
       }
 
+      // XXX: This is for debugging. Remove before production.
       // Reply message
       //strcpy(reply_msg, "acknowledged the message: ");
-      strcat(reply_msg, recv);
+      reply_msg = (char*)calloc(recv_len, sizeof(char));
+      memcpy(reply_msg, recv, recv_len);
       nbb_insert_item(i, reply_msg, recv_len);
 
       recv_len = 0;
+      free(recv);
       free(reply_msg);
     }
+
   }
 
   signal(SIGUSR1, nbb_recv_client_data);
@@ -363,7 +365,13 @@ int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int i
 	unsigned char * shm;
   int free_slot;
 
-  free_slot = nbb_free_channel_slot();
+  if(shm_read_id == NAMESERVER_WRITE && shm_write_id == NAMESERVER_READ) {
+    free_slot = 0;
+  }
+  else {
+    free_slot = nbb_free_channel_slot();
+  }
+
   if(free_slot == -1) {
 	printf("! nbb_open_channel(): no free_slot\n");
     return -1;
