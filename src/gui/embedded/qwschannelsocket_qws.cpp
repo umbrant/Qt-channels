@@ -167,14 +167,14 @@ void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
-    if (::nbb_connect_service((char *) GUI) < 0) {
+    if (::nbb_connect_service(file.toAscii().data()) < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
-             << "Cannot connect to " << GUI << " service!" << endl;
+             << "Cannot connect to " << file.toAscii().data() << " service!" << endl;
         return false;
     }
 
     cout << "QWSChannelSocket::connectToLocalFile(): "
-         << "Connected to " << GUI << " service!" << endl;
+         << "Connected to " << file.toAscii().data() << " service!" << endl;
 
     return true;
 }
@@ -210,7 +210,7 @@ void QWSChannelServerSocket::init(const QString &file)
 
     ::nbb_set_cb_new_connection( on_new_connection );
 
-    if (::nbb_init_service(SERVICE_MAX_CHANNELS, (char *) GUI)) {
+    if (::nbb_init_service(SERVICE_MAX_CHANNELS, file.toAscii().data())) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;
         exit(-1);
