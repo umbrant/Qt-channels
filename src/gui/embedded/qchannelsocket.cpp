@@ -173,12 +173,12 @@ int QChannelSocket::socketDescriptor()
 
 bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode)
 {
-    assert(slotNumber);
-
     slotNumber = socketDescriptor;
     sockState = socketState;
 
-    // Assume this method is called ONCE as checked by the assertion above
+    // Keep mapping from slot ID to client socket so that inside the callback
+    // function (which has slot ID as argument), we can identify the client
+    // socket object.
     g_clientSocketMap[slotNumber] = this;
 
     return true;

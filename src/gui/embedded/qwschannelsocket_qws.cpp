@@ -95,15 +95,16 @@ QT_BEGIN_NAMESPACE
  * HELPER DATA/FUNCTIONS
  *****************************/
 
-// Assume there is only one server socket, we keep track of it to be notified
-// of new incoming connection.
-static QWSChannelServerSocket *g_serverSocket = 0;
-static void on_new_connection(int slot_id)
+// Callback function to handle new connection.
+// It assumes that |arg| is the object pointer to which this channel slot
+// belongs.
+static void on_new_connection(int slot_id, void *arg)
 {
-    assert(g_serverSocket != 0);
-    g_serverSocket->incomingConnection(slot_id);
+    assert(arg != 0 && slot_id >= 0); 
+    QWSChannelServerSocket *serverSocket = 0;
+    serverSocket = reinterpret_cast<QWSChannelServerSocket*> (arg);
+    serverSocket->incomingConnection(slot_id);
 }
-
 
 /***********************************************************************
  *
@@ -205,12 +206,12 @@ QWSChannelServerSocket::QWSChannelServerSocket(const QString& file, QObject *par
 
 void QWSChannelServerSocket::init(const QString &file)
 {
-    assert(g_serverSocket == 0);
-    g_serverSocket = this;
+    // Use the file as the service name
+    char *service_name = file.toAscii().data();
 
-    ::nbb_set_cb_new_connection( on_new_connection );
+    ::nbb_set_cb_new_connection(service_name, on_new_connection);
 
-    if (::nbb_init_service(SERVICE_MAX_CHANNELS, file.toAscii().data())) {
+    if (::nbb_init_service(SERVICE_MAX_CHANNELS, service_name)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
              << endl;
         exit(-1);
