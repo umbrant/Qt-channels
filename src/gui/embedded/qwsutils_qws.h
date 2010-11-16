@@ -1,6 +1,3 @@
-
-/* Modified by andrew */
-
 /****************************************************************************
 **
 ** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -42,24 +39,11 @@
 **
 ****************************************************************************/
 
-#if 0
+#ifndef QWSUTILS_QWS_H
+#define QWSUTILS_QWS_H
 
-#ifndef QWSSOCKET_QWS_H
-#define QWSSOCKET_QWS_H
-
-#include <QtCore/qconfig.h>
-#include <QtGui/qwsutils_qws.h>
-
-#ifndef QT_NO_QWS_MULTIPROCESS
-
-#ifndef QT_NO_SXE
-#include <QtCore/qmutex.h>
-#include <QtGui/private/qunixsocketserver_p.h>
-#include <QtGui/private/qunixsocket_p.h>
-#else
-#include <QtNetwork/qtcpsocket.h>
-#include <QtNetwork/qtcpserver.h>
-#endif
+#include <QtCore/QIODevice>
+#include "qchannelsocket_p.h"
 
 QT_BEGIN_HEADER
 
@@ -67,61 +51,51 @@ QT_BEGIN_NAMESPACE
 
 QT_MODULE(Gui)
 
-
-class QWSSocket : public QWS_SOCK_BASE
-{
-    Q_OBJECT
-public:
-    explicit QWSSocket(QObject *parent=0);
-    ~QWSSocket();
-
-    bool connectToLocalFile(const QString &file);
-
 #ifndef QT_NO_SXE
-    QString errorString();
-Q_SIGNALS:
-    void connected();
-    void disconnected();
-    void error(QAbstractSocket::SocketError);
-private Q_SLOTS:
-    void forwardStateChange(SocketState);
+#define QWS_SOCK_BASE QUnixSocket
+#define QWS_SOCK_SERVER_BASE QUnixSocketServer
+class QUnixSocket;
+class QUnixSocketServer;
+#else
+//#define QWS_SOCK_BASE QTcpSocket
+//#define QWS_SOCK_SERVER_BASE QTcpServer
+#define QWS_SOCK_BASE QChannelSocket
+#define QWS_SOCK_SERVER_BASE QWSChannelServerSocket
+class QChannelSocket;
+class QWSChannelServerSocket;
 #endif
+class QWSSocket;
+class QWSServerSocket;
 
-private:
-    Q_DISABLE_COPY(QWSSocket)
-};
-
-
-class QWSServerSocket : public QWS_SOCK_SERVER_BASE
+/********************************************************************
+ *
+ * Convenient socket functions
+ *
+ ********************************************************************/
+#ifndef QT_NO_QWS_MULTIPROCESS
+inline int qws_read_uint(QIODevice *socket)
 {
-    Q_OBJECT
-public:
-    QWSServerSocket(const QString& file, QObject *parent=0);
-    ~QWSServerSocket();
+    if (!socket || socket->bytesAvailable() < (int)sizeof(int))
+        return -1;
 
-#ifndef QT_NO_SXE
-    QWSSocket *nextPendingConnection();
-Q_SIGNALS:
-    void newConnection();
-protected:
-    void incomingConnection(int socketDescriptor);
-private:
-    QMutex ssmx;
-    QList<int> inboundConnections;
-#endif
+    int i;
+    socket->read(reinterpret_cast<char*>(&i), sizeof(i));
 
-private:
-    Q_DISABLE_COPY(QWSServerSocket)
+    return i;
+}
 
-    void init(const QString &file);
-};
+inline void qws_write_uint(QIODevice *socket, int i)
+{
+    if (!socket)
+        return;
+
+    socket->write(reinterpret_cast<char*>(&i), sizeof(i));
+}
+
+#endif // QT_NO_QWS_MULTIPROCESS
 
 QT_END_NAMESPACE
 
 QT_END_HEADER
 
-#endif // QT_NO_QWS_MULTIPROCESS
-
-#endif // QWSSOCKET_QWS_H
-
-#endif // #if 0
+#endif // QWSUTILS_QWS_H

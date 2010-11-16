@@ -75,7 +75,7 @@ QT_BEGIN_NAMESPACE
  **********************/
 
 // Global channel client socket mappings from slot ID to sockets
-static map<int, QChannelSocket> g_clientSocketMap;
+static map<int, QChannelSocket*> g_clientSocketMap;
 
 // Function to handle new incoming data
 static void on_new_available_data(int slot_id)
@@ -115,7 +115,7 @@ QChannelSocket::~QChannelSocket()
 /*!
  Emits ready read signal whenever there is data to read
  */
-QChannelSocket::emitReadyRread() const
+void QChannelSocket::emitReadyRead()
 {
     emit readyRead();
 }
@@ -157,6 +157,15 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 	return maxSize;
 }
 
+qint64 QChannelSocket::write(const QByteArray & byteArray) {
+    return QChannelSocket::write(byteArray.data(), byteArray.length());
+}
+
+qint64 QChannelSocket::write(const char * data, qint64 maxSize) {
+    return writeData(data, maxSize);
+}
+
+
 int QChannelSocket::socketDescriptor()
 {
     return slotNumber;
@@ -178,6 +187,11 @@ bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::
 QAbstractSocket::SocketState QChannelSocket::state()
 {
     return sockState;
+}
+
+/* Writes always flush, so return false */
+bool QChannelSocket::flush() {
+    return false;
 }
 
 QT_END_NAMESPACE

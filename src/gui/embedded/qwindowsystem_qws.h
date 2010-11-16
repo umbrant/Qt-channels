@@ -51,6 +51,8 @@
 #include <QtGui/qkbd_qws.h>
 #include <QtGui/qregion.h>
 
+#include "qwschannelsocket_qws.h"
+
 QT_BEGIN_HEADER
 
 QT_BEGIN_NAMESPACE
@@ -491,7 +493,7 @@ private:
 private:
     int socketDescriptor;
 #ifndef QT_NO_QWS_MULTIPROCESS
-    QWSSocket *csocket;
+    QWSChannelSocket *csocket;
 #endif
     QWSCommand* command;
     uint isClosed : 1;

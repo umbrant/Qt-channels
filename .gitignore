@@ -49,6 +49,7 @@ src/gui/animation/
 src/gui/dialogs/
 src/gui/effects/
 src/gui/egl/
+src/gui/embedded/
 src/gui/graphicsview/
 src/gui/gui.pro
 src/gui/image/

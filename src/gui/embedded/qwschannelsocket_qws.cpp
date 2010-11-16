@@ -101,9 +101,7 @@ static QWSChannelServerSocket *g_serverSocket = 0;
 static void on_new_connection(int slot_id)
 {
     assert(g_serverSocket != 0);
-#ifndef QT_NO_SXE
     g_serverSocket->incomingConnection(slot_id);
-#endif
 }
 
 
@@ -115,17 +113,14 @@ static void on_new_connection(int slot_id)
 QWSChannelSocket::QWSChannelSocket(QObject *parent)
     : QChannelSocket(parent)
 {
-#ifndef QT_NO_SXE
     QObject::connect( this, SIGNAL(stateChanged(SocketState)),
             this, SLOT(forwardStateChange(SocketState)));
-#endif
 }
 
 QWSChannelSocket::~QWSChannelSocket()
 {
 }
 
-#ifndef QT_NO_SXE
 // Not implemented
 QString QWSChannelSocket::errorString()
 {
@@ -146,7 +141,7 @@ QString QWSChannelSocket::errorString()
 }
 
 // Not implemented
-void QWSChannelSocket::forwardStateChange(QUnixSocket::SocketState st  )
+void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 {
     cout << "QWSChannelSocket::forwardStateChange(): "
          << "CALLED BUT NOT IMPLEMENTED!" << endl;
@@ -169,7 +164,6 @@ void QWSChannelSocket::forwardStateChange(QUnixSocket::SocketState st  )
         emit error((QAbstractSocket::SocketError)0);
 */
 }
-#endif
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
@@ -183,37 +177,14 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
          << "Connected to " << GUI << " service!" << endl;
 
     return true;
-/*
-#ifndef QT_NO_SXE
-    bool result = QUnixSocket::connect( file.toLocal8Bit() );
-    if ( !result )
-    {
-        perror( "QWSChannelSocketAuth::connectToLocalFile could not connect:" );
-        emit error(QAbstractSocket::ConnectionRefusedError);
-        return false;
-    }
-    return true;
-#else
-    // create socket
-    int s = ::socket(PF_LOCAL, SOCK_STREAM, 0);
-
-    // connect to socket
-    struct sockaddr_un a;
-    memset(&a, 0, sizeof(a));
-    a.sun_family = PF_LOCAL;
-    strncpy(a.sun_path, file.toLocal8Bit().constData(), sizeof(a.sun_path) - 1);
-    int r = ::connect(s, (struct sockaddr*)&a, SUN_LEN(&a));
-    if (r == 0) {
-        setSocketDescriptor(s);
-    } else {
-        perror("QWSChannelSocket::connectToLocalFile could not connect:");
-        ::close(s);
-        emit error(ConnectionRefusedError);
-        return false;
-    }
-#endif
-*/
 }
+
+// Do nothing in our channels implementation
+bool QWSChannelSocket::flush()
+{
+    return true;
+}
+
 
 
 /***********************************************************************
@@ -226,7 +197,7 @@ QWSChannelServerSocket::QWSChannelServerSocket(const QString& file, QObject *par
 #ifndef QT_NO_SXE
     : QUnixSocketServer(parent)
 #else
-    : QTcpServer(parent)
+    : QObject(parent)
 #endif
 {
     init(file);
@@ -244,80 +215,12 @@ void QWSChannelServerSocket::init(const QString &file)
              << endl;
         exit(-1);
     }
-
-/*
-#ifndef QT_NO_SXE
-    QByteArray fn = file.toLocal8Bit();
-    bool result = QUnixSocketServer::listen( fn );
-    if ( !result )
-    {
-        QUnixSocketServer::ServerError err = serverError();
-        switch ( err )
-        {
-            case InvalidPath:
-                qWarning("QWSChannelServerSocket:: invalid path %s", qPrintable(file));
-                break;
-            case ResourceError:
-            case BindError:
-            case ListenError:
-                qWarning("QWSChannelServerSocket:: could not listen on path %s", qPrintable(file));
-                break;
-            default:
-                break;
-        }
-    }
-#else
-    int backlog = 16; //#####
-
-// create socket
-    int s = ::socket(PF_LOCAL, SOCK_STREAM, 0);
-    if (s == -1) {
-        perror("QWSChannelServerSocket::init");
-        qWarning("QWSChannelServerSocket: unable to create socket.");
-        return;
-    }
-
-    QByteArray fn = file.toLocal8Bit();
-    unlink(fn.constData()); // doesn't have to succeed
-
-    // bind socket
-    struct sockaddr_un a;
-    memset(&a, 0, sizeof(a));
-    a.sun_family = PF_LOCAL;
-    strncpy(a.sun_path, fn.constData(), sizeof(a.sun_path) - 1);
-    int r = ::bind(s, (struct sockaddr*)&a, SUN_LEN(&a));
-    if (r < 0) {
-        perror("QWSChannelServerSocket::init");
-        qWarning("QWSChannelServerSocket: could not bind to file %s", fn.constData());
-        ::close(s);
-        return;
-    }
-
-    if (chmod(fn.constData(), 0600) < 0) {
-        perror("QWSChannelServerSocket::init");
-        qWarning("Could not set permissions of %s", fn.constData());
-        ::close(s);
-        return;
-    }
-
-    // listen
-    if (::listen(s, backlog) == 0) {
-        if (!setSocketDescriptor(s))
-            qWarning( "QWSChannelServerSocket could not set descriptor %d : %s", s, errorString().toLatin1().constData());
-    } else {
-        perror("QWSChannelServerSocket::init");
-        qWarning("QWSChannelServerSocket: could not listen to file %s", fn.constData());
-        ::close(s);
-    }
-#endif
-*/
 }
 
 QWSChannelServerSocket::~QWSChannelServerSocket()
 {
 }
 
-#ifndef QT_NO_SXE
 
 // In our channels, socket descriptor is equivalent to slot ID
 void QWSChannelServerSocket::incomingConnection(int socketDescriptor)
@@ -336,7 +239,6 @@ QWSChannelSocket *QWSChannelServerSocket::nextPendingConnection()
     return s;
 }
 
-#endif // QT_NO_SXE
 
 QT_END_NAMESPACE
 

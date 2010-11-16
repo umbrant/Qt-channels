@@ -73,7 +73,6 @@ class Q_GUI_EXPORT QChannelSocket : public QIODevice
 {
     Q_OBJECT
 public:
-        /*
     enum SocketState {
         UnconnectedState,
         HostLookupState,
@@ -83,7 +82,6 @@ public:
         ListeningState,
         ClosingState
     };
-    */
 
     QChannelSocket(QObject * = 0);
     virtual ~QChannelSocket();
@@ -91,7 +89,7 @@ public:
     qint64 bytesAvailable() const;
     qint64 bytesToWrite() const;
 
-    void emitReadyRead() const;
+    void emitReadyRead();
 
     qint64 write(const char * data, qint64 maxSize);
     qint64 write(const QByteArray & byteArray);
@@ -103,6 +101,7 @@ public:
     int socketDescriptor();
     bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
     QAbstractSocket::SocketState state();
+    bool flush();
 
 protected:
     qint64 readData(char * data, qint64 maxSize);
@@ -118,6 +117,7 @@ Q_SIGNALS:
     // TODO: make readyRead actually work properly. Necessary.
     // This signal is emitted once every time new data is available for reading from the device. It will only be emitted again once new data is available, such as when a new payload of network data has arrived on your network socket, or when a new block of data has been appended to your device.
     void readyRead();
+    // This one is easy, and implemented
     void bytesWritten(qint64 bytes);
     // These other two are more optional
     void disconnected();
