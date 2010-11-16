@@ -209,7 +209,7 @@ void QWSChannelServerSocket::init(const QString &file)
     // Use the file as the service name
     char *service_name = file.toAscii().data();
 
-    ::nbb_set_cb_new_connection(service_name, on_new_connection);
+    ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
 
     if (::nbb_init_service(SERVICE_MAX_CHANNELS, service_name)) {
         cout << "QWSChannelServerSocket::init(): Failed to init service!"
