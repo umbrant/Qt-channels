@@ -100,6 +100,7 @@ QT_BEGIN_NAMESPACE
 // belongs.
 static void on_new_connection(int slot_id, void *arg)
 {
+    printf("on_new_connection called for %d \n", slot_id);
     assert(arg != 0 && slot_id >= 0); 
     QWSChannelServerSocket *serverSocket = 0;
     serverSocket = reinterpret_cast<QWSChannelServerSocket*> (arg);
