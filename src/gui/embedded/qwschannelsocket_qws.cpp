@@ -220,6 +220,9 @@ void QWSChannelServerSocket::init(const QString &file)
     }
 
     ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
+
+    cout << "QWSChannelServerSocket::init(): Successfully init-ed "
+         << service_name << endl;
 }
 
 QWSChannelServerSocket::~QWSChannelServerSocket()
