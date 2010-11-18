@@ -3,7 +3,7 @@
 
 // list of channel pointers (to shared memory)
 struct channel channel_list[SERVICE_MAX_CHANNELS] = {};
-struct service_used services_used[SERVICE_MAX_CHANNELS] = {};
+struct connected_node connected_nodes[SERVICE_MAX_CHANNELS] = {};
 delay_buffer_t delay_buffers[SERVICE_MAX_CHANNELS];
 
 sem_t *sem_id;   // POSIX semaphore
@@ -143,7 +143,7 @@ int nbb_init_service(int num_channels, const char* name)
       tmp = strtok(NULL, " ");
     }
 
-    signal(SIGUSR1, nbb_recv_client_data);
+    signal(SIGUSR1, nbb_recv_data);
 
     sem_post(sem_id);
     free(recv);
@@ -154,7 +154,7 @@ int nbb_init_service(int num_channels, const char* name)
 
 // Called by clients connecting to a server
 // Needs to map shm buffers into client's address space
-int nbb_connect_service(const char* service_name) 
+int nbb_connect_service(const char* client_name, const char* service_name) 
 {
   char request[MAX_MSG_LEN];
   int ret_code;
@@ -199,26 +199,36 @@ int nbb_connect_service(const char* service_name)
     int slot;
     int channel_id;
     int service_pid;
+    char msg[MAX_MSG_LEN];
+    char pid[PID_MAX_STRLEN + 1];
 
     tmp = strtok(recv, " ");
     channel_id = atoi(tmp);
     tmp = strtok(NULL, " ");
     service_pid = atoi(tmp);
 
-    slot = nbb_open_channel(NULL, channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
+    slot = nbb_open_channel(client_name, channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
 
-    services_used[slot].service_name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
-    strcpy(services_used[slot].service_name, service_name);
-    services_used[slot].pid = service_pid;
+    connected_nodes[slot].name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
+    strcpy(connected_nodes[slot].name, service_name);
+    connected_nodes[slot].pid = service_pid;
    
     ret_code = slot;
- 
-    // Notify service of the new connection by sending a dummy message
-    if (nbb_client_send(service_name, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN)) {
+
+    sprintf(pid, "%d", getpid());
+    strcpy(msg, NEW_CONN_NOTIFY_MSG) ;
+    strcat(msg, " ");
+    strcat(msg, pid);
+    strcat(msg, " ");
+    strcat(msg, client_name);
+
+    // Notify service of the new connection
+    if (nbb_send(service_name, msg, strlen(msg))) {
       printf("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     } else {
       printf("** Connecting to service successful, channel: %d service pid: %d\n", channel_id, service_pid);
+      signal(SIGUSR1, nbb_recv_data);
     }
   }
 
@@ -265,59 +275,62 @@ void nbb_set_cb_new_data(char* owner, cb_new_data_func func)
   }
 }
 
-int nbb_client_send(const char* service_name, const char* msg, size_t msg_len)
+int nbb_send(const char* destination, const char* msg, size_t msg_len)
 {
   int i;
   char* recv;
   size_t recv_len;
-  int retval;
+  // int retval;
 
-  assert(service_name != NULL && msg != NULL);
+printf("** dest: %s, msg: %s, msg_len: %d\n", destination, msg, msg_len);
+  assert(destination != NULL && msg != NULL);
 
   if (msg_len == 0) {
-    printf("! nbb_client_send(): nothing to send (0 length passed in)\n");
+    printf("! nbb_send(): nothing to send (0 length passed in)\n");
     return 0;
   }
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1; i < SERVICE_MAX_CHANNELS;i++) {
-    if(channel_list[i].in_use && 
-       !strcmp(service_name, services_used[i].service_name)) {
+    if(channel_list[i].in_use && connected_nodes[i].name &&
+       !strcmp(destination, connected_nodes[i].name)) {
       break;
     }
   }
 
   if(i == SERVICE_MAX_CHANNELS) {
-    printf("! nbb_client_send(): Service not found\n");
+    printf("! nbb_send(): Process not found\n");
     return -1;
   }
 
   nbb_insert_item(i, msg, msg_len); 
-  kill(services_used[i].pid, SIGUSR1);
+  kill(connected_nodes[i].pid, SIGUSR1);
 
-  printf("** Send '%.*s' to %s\n", (int) msg_len, msg, service_name);
+  printf("** Send '%.*s' to %s\n", (int) msg_len, msg, destination);
 
-  do{ 
+  /* Not needed
+  do { 
     retval = nbb_read_item(i, (void**)&recv, &recv_len);
-  } while (retval == BUFFER_EMPTY || retval == BUFFER_EMPTY_PRODUCER_INSERTING);
+  } while (retval == BUFFER_EMPTY || retval == BUFFER_EMPTY_PRODUCER_INSERTING); 
 
   if(strcmp(recv, NEW_CONN_NOTIFY_MSG)) {
     nbb_flush_shm(i, recv, recv_len);
   }
 
   printf("** Received '%.*s' from the service\n", (int) recv_len, recv);
+*/
 
   return 0;
 }
 
 /* Called when the service gets new client data */
-void nbb_recv_client_data(int signum)
+void nbb_recv_data(int signum)
 {
   int i;
   char* recv;
   size_t recv_len = 0;
   int retval = -1;
-  char* reply_msg;
+  // char* reply_msg;
   int is_new_conn_msg = 0;
 
   // Attempt to debug Qt. XXX: Remove when done.
@@ -328,9 +341,34 @@ void nbb_recv_client_data(int signum)
     retval = nbb_read_item(i, (void**)&recv, &recv_len);
 
     if(retval == OK) {
-      if (recv_len == NEW_CONN_NOTIFY_MSG_LEN &&
-          memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN) == 0) {
-        printf("***NBB***: New connection on slot %d\n", i);
+      if (memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN) == 0) {       
+        recv = (char*)realloc(recv, recv_len + 1);
+        recv[recv_len] = '\0';
+
+        char* tmp = NULL;
+
+/*
+				char* msg_start = (char *) recv + NEW_CONN_NOTIFY_MSG_LEN + 1;
+				int name_len = 0;
+
+				connected_nodes[i].pid = (int) strtol(msg_start, &tmp, 10);
+				name_len = recv_len - 1 - NEW_CONN_NOTIFY_MSG_LEN - ((int) (tmp - recv));
+				connected_nodes[i].name = (char *) malloc(sizeof(char) * (name_len+1));
+				assert(connected_nodes[i].name != NULL);
+				strncpy(connected_nodes[i].name, tmp + 1, name_len);
+				connected_nodes[i].name[name_len] = '\0';
+*/
+
+        strtok(recv, " ");
+        tmp = strtok(NULL, " ");
+        connected_nodes[i].pid = atoi(tmp);
+        tmp = strtok(NULL, " ");
+        connected_nodes[i].name = (char*)malloc(strlen(tmp) * sizeof(char));
+        strcpy(connected_nodes[i].name, tmp);
+
+
+        printf("***NBB***: New connection on slot %d from client_name: %s with pid: %d\n", i, connected_nodes[i].name, connected_nodes[i].pid);
+
         is_new_conn_msg = 1;
       }
 
@@ -354,18 +392,18 @@ void nbb_recv_client_data(int signum)
 
       // XXX: This is for debugging. Remove before production.
       // Reply message
-      reply_msg = (char*)calloc(recv_len, sizeof(char));
+      /* reply_msg = (char*)calloc(recv_len, sizeof(char));
       memcpy(reply_msg, recv, recv_len);
       nbb_insert_item(i, reply_msg, recv_len);
-      free(reply_msg);
+      free(reply_msg); */
 
-      recv_len = 0;
+      recv_len = 0; 
       free(recv);
     }
 
   }
 
-  signal(SIGUSR1, nbb_recv_client_data);
+  signal(SIGUSR1, nbb_recv_data);
 }
 
 int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)
@@ -482,43 +520,39 @@ int nbb_read_bytes(int slot, char* buf, int size)
   assert(slot >= 0 && buf != NULL && size >= 0);
 
   delay_buffer_t* delay_buffer = &(delay_buffers[slot]);
+  printf("***NBB***: Delay buffer %d: %d/%d\n",
+         slot, delay_buffer->len, delay_buffer->capacity);
+  assert(delay_buffer->capacity >= delay_buffer->len);
 
-  if(!size) {
+  // Attempt to read 0 bytes or buffer has nothing to read
+  if (size == 0 || delay_buffer->content == NULL || delay_buffer->len == 0) {
     return 0;
   }
 
+  assert(delay_buffer->content != NULL && delay_buffer->len > 0);
+
+  // Read minimum of the requested length and available data
   if(size > delay_buffer->len) {
     size = delay_buffer->len;
   }
 
-  int new_len = delay_buffer->len - size;
-  char* tmp;
-
-  /*
-  if(new_len <= 0) {
-    perror("! Not enough bytes\n");
-    return -1;
-  }
-  */
-
-  tmp = (char*)malloc(new_len);
-
+  // Read |size| bytes into |buf| and update statistics
   memcpy(buf, delay_buffer->content, size);
-  memcpy(tmp, delay_buffer->content + size, new_len); 
-
-  delay_buffer->content = (char*)realloc(delay_buffer->content, new_len);
-  memcpy(delay_buffer->content, tmp, new_len); 
-  delay_buffer->len = new_len;
-
   channel_list[slot].read_count += size;
 
-  free(tmp);
+  // Move remaining data (if any) into the front of buffer
+  int new_len = delay_buffer->len - size;
+  if (new_len > 0) {
+    memmove(delay_buffer->content, delay_buffer->content + size, new_len);
+  }
+  delay_buffer->len = new_len;
 
   return size;
 }
 
 int nbb_bytes_available(int slot)
 {
+  printf("slot: %d\n", slot);
   assert(slot >= 0 && slot < SERVICE_MAX_CHANNELS);
   return delay_buffers[slot].len;
 }
@@ -540,15 +574,23 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   assert(slot >= 0 && slot < SERVICE_MAX_CHANNELS);
   assert(array_to_flush != NULL && size >= 0);
 
-  int new_size = 0;
-
   if (size == 0)
     return;
 
-  // Grow the buffer and append |array_to_flush|
   delay_buffer_t* buffer = &(delay_buffers[slot]);
-  new_size = buffer->len + size;
-  buffer->content = (char *) realloc(buffer->content, new_size);
+  int new_size = buffer->len + size;
+
+  // Grow the buffer if exceeding current capacity
+  if (new_size > buffer->capacity) {
+    // Initial capacity (2 * MAX_MSG_LEN)
+    if (buffer->capacity == 0) {
+      buffer->capacity = MAX_MSG_LEN;
+    }
+    buffer->content = (char *) realloc(buffer->content, 2 * buffer->capacity);
+    buffer->capacity = 2 * buffer->capacity;
+  }
+
+  // Append new data to the end (or beginning if it's the first flush)
   memcpy(buffer->content + buffer->len, array_to_flush, size);
   buffer->len = new_size;
 
