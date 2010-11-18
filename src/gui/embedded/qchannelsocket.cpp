@@ -132,6 +132,9 @@ void QChannelSocket::emitReadyRead()
   */
 qint64 QChannelSocket::bytesAvailable() const
 {
+    if (slotNumber < 0) {
+        return qint64(0);
+    }
     qint64 avail =  nbb_bytes_available(slotNumber) + QIODevice::bytesAvailable();
     return avail;
 }
