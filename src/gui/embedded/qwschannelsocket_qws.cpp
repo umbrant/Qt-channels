@@ -115,8 +115,9 @@ static void on_new_connection(int slot_id, void *arg)
 QWSChannelSocket::QWSChannelSocket(QObject *parent)
     : QChannelSocket(parent)
 {
-    QObject::connect( this, SIGNAL(stateChanged(SocketState)),
-            this, SLOT(forwardStateChange(SocketState)));
+    // XXX: Not sure if we should comment this out!
+//    QObject::connect( this, SIGNAL(stateChanged(SocketState)),
+//            this, SLOT(forwardStateChange(SocketState)));
 }
 
 QWSChannelSocket::~QWSChannelSocket()
@@ -210,8 +211,6 @@ void QWSChannelServerSocket::init(const QString &file)
     // Use the file as the service name
     char *service_name = file.toAscii().data();
 
-    ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
-
     // TODO this is a hardcoded 5 constant. If we need more clients per
     // server, increase this number
     if (::nbb_init_service(5, service_name)) {
@@ -219,6 +218,11 @@ void QWSChannelServerSocket::init(const QString &file)
              << endl;
         exit(-1);
     }
+
+    ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
+
+    cout << "QWSChannelServerSocket::init(): Successfully init-ed "
+         << service_name << endl;
 }
 
 QWSChannelServerSocket::~QWSChannelServerSocket()
