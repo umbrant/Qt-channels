@@ -109,6 +109,8 @@ public:
 
     bool flush();
 
+    virtual bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
+
 //#ifndef QT_NO_SXE
     QString errorString();
 Q_SIGNALS:

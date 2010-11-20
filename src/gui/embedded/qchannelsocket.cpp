@@ -72,22 +72,6 @@ extern "C" {
 
 QT_BEGIN_NAMESPACE
 
-/***********************
-  HELPER FUNCTION/DATA
- **********************/
-
-// Global channel client socket mappings from slot ID to sockets
-static map<int, QChannelSocket*> g_clientSocketMap;
-
-// Function to handle new incoming data
-static void on_new_available_data(int slot_id)
-{
-    assert(g_clientSocketMap.size() > 0);
-    QChannelSocket *socket = g_clientSocketMap[slot_id];
-    assert(socket != 0);
-    socket->emitReadyRead();
-}
-
 /*!
   Construct a QChannelSocket instance, with \a parent.
 
@@ -102,12 +86,8 @@ QChannelSocket::QChannelSocket(QObject * parent)
     slotNumber = -1;
     sockState = QAbstractSocket::UnconnectedState;
 
-    // Form a unique client name for nbb callback purposes
-    stringstream client_name;
-    client_name << "qchannelsocket@" << this;
-
-    // Register for new incoming data event from nbb
-    nbb_set_cb_new_data(const_cast<char*>(client_name.str().c_str()), on_new_available_data);
+    // Form a unique client name for nbb purposes
+    socketName << "qchannelsocket@" << this;
 }
 
 /*!
@@ -116,6 +96,11 @@ QChannelSocket::QChannelSocket(QObject * parent)
 QChannelSocket::~QChannelSocket()
 {
     // TODO
+}
+
+const char *QChannelSocket::getSocketName(void)
+{
+    return socketName.str().c_str();
 }
 
 /*!
@@ -184,12 +169,6 @@ bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::
 {
     slotNumber = socketDescriptor;
     sockState = socketState;
-
-    // Keep mapping from slot ID to client socket so that inside the callback
-    // function (which has slot ID as argument), we can identify the client
-    // socket object.
-    g_clientSocketMap[slotNumber] = this;
-
     return true;
 }
 
