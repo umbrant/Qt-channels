@@ -58,6 +58,8 @@
 #include <QtCore/qlist.h>
 #include <QtCore/qshareddata.h>
 
+#include <sstream>
+
 #include "nbb.h"
 
 extern "C" {
@@ -99,19 +101,22 @@ public:
 
     // Required for proper QAbstractSocket casting
     int socketDescriptor();
-    bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
+    virtual bool setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState = QAbstractSocket::ConnectedState, QAbstractSocket::OpenMode openMode = ReadWrite);
     QAbstractSocket::SocketState state();
     bool flush();
 
 protected:
     qint64 readData(char * data, qint64 maxSize);
     qint64 writeData (const char * data, qint64 maxSize);
+    // Unique socket name for use with NBB
+    const char *getSocketName(void);
 
 private:
     QChannelSocket(const QChannelSocket &);
     QChannelSocket & operator=(const QChannelSocket &);
     int slotNumber;
     QAbstractSocket::SocketState sockState;
+    std::stringstream socketName;
 
 Q_SIGNALS:
     // TODO: make readyRead actually work properly. Necessary.

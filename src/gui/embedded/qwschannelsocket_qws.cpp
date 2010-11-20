@@ -91,20 +91,36 @@ using namespace std;
 
 QT_BEGIN_NAMESPACE
 
-/******************************
- * HELPER DATA/FUNCTIONS
- *****************************/
+/***************************************************
+ * HELPER DATA/FUNCTIONS FOR QWSChannelServerSocket
+ ***************************************************/
 
 // Callback function to handle new connection.
 // It assumes that |arg| is the object pointer to which this channel slot
 // belongs.
-static void on_new_connection(int slot_id, void *arg)
+static void server_on_new_connection(int slot_id, void *arg)
 {
-    printf("on_new_connection called for %d \n", slot_id);
+    printf("server_on_new_connection called for %d \n", slot_id);
     assert(arg != 0 && slot_id >= 0); 
     QWSChannelServerSocket *serverSocket = 0;
     serverSocket = reinterpret_cast<QWSChannelServerSocket*> (arg);
     serverSocket->incomingConnection(slot_id);
+}
+
+/******************************************
+  HELPER FUNCTION/DATA FOR QWSChannelSocket
+ *******************************************/
+
+// Global channel client socket mappings from slot ID to sockets
+static map<int, QWSChannelSocket*> g_clientSocketMap;
+
+// Function to handle new incoming data
+static void client_on_new_available_data(int slot_id)
+{
+    assert(g_clientSocketMap.size() > 0);
+    QWSChannelSocket *socket = g_clientSocketMap[slot_id];
+    assert(socket != 0);
+    socket->emitReadyRead();
 }
 
 /***********************************************************************
@@ -170,14 +186,20 @@ void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
-    if (::nbb_connect_service(file.toAscii().data()) < 0) {
+    const char *client_name = this->getSocketName();
+    const char *service_name = file.toAscii().data();
+
+    if (::nbb_connect_service(client_name, service_name) < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
-             << "Cannot connect to " << file.toAscii().data() << " service!" << endl;
+             << "Cannot connect to " << service_name << " service!" << endl;
         return false;
     }
 
     cout << "QWSChannelSocket::connectToLocalFile(): "
-         << "Connected to " << file.toAscii().data() << " service!" << endl;
+         << "Connected to " << service_name << " service!" << endl;
+
+    // Register for new incoming data event from nbb
+    nbb_set_cb_new_data(client_name, client_on_new_available_data);
 
     return true;
 }
@@ -188,6 +210,23 @@ bool QWSChannelSocket::flush()
     return true;
 }
 
+// Override QChannelSocket
+// This is needed to move the signal handler stuff into this file.
+// This move is necessary because in connectToLocalFile(), we need
+// to connect_service() before setting the callback.
+bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode openMode)
+{
+    assert(socketDescriptor >= 0);
+
+    QChannelSocket::setSocketDescriptor(socketDescriptor, socketState, openMode);
+
+    // Keep mapping from slot ID to client socket so that inside the callback
+    // function (which has slot ID as argument), we can identify the client
+    // socket object.
+    g_clientSocketMap[socketDescriptor] = this;
+
+    return true;
+}
 
 
 /***********************************************************************
@@ -219,7 +258,7 @@ void QWSChannelServerSocket::init(const QString &file)
         exit(-1);
     }
 
-    ::nbb_set_cb_new_connection(service_name, on_new_connection, this);
+    ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
 
     cout << "QWSChannelServerSocket::init(): Successfully init-ed "
          << service_name << endl;
