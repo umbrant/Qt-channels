@@ -187,7 +187,8 @@ void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
     const char *client_name = this->getSocketName();
-    const char *service_name = file.toAscii().data();
+    QByteArray file_name = file.toAscii();
+    const char *service_name = file_name.data();
 
     if (::nbb_connect_service(client_name, service_name) < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
