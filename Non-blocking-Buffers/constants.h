@@ -8,6 +8,8 @@
 #define READ_WRITE_CONV 1000 // Read id always differ by 1000 from write id 
 #define SEM_KEY "/1337" // POSIX semaphore identifier to be used by everyone
 
+#define NBB_SIGNAL SIGRTMAX
+
 enum {
 	SERVICE_TEST = 3000,
 	SERVICE_TEST_READ = 3000,

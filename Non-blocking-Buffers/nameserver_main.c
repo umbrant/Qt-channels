@@ -16,7 +16,7 @@ void data_available(int signum)
 
   printf("recv: %s, after parsing: %s\n", recv, strtok(recv, " "));
 
-  signal(SIGUSR1, data_available);
+  signal(NBB_SIGNAL, data_available);
   //int type = strtok(recv, " ") - "0";
   //printf("type: %d\n", type);
 
@@ -30,7 +30,7 @@ int main()
 		return -1;
 	}
 
-  signal(SIGUSR1, data_available);
+  signal(NBB_SIGNAL, data_available);
 
 	while(1) {
     sleep(1);

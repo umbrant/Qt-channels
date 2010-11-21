@@ -25,7 +25,7 @@ printf("nameserver recv: %s\n", recv_str);
   request_type = atoi(strtok(recv_str, " "));
   handle_connection[request_type](strtok(NULL, ""));
 
-  signal(SIGUSR1, data_available);
+  signal(NBB_SIGNAL, data_available);
   free(recv);
   free(recv_str);
 }

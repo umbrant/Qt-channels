@@ -151,6 +151,9 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size);
 // Read a specified number of bytes from the shm
 int nbb_read_bytes(int slot, char* buf, int size);
 
+// Write number of bytes to slot slot_id
+int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len);
+
 // Simple utility functions that should be self-explanatory
 int nbb_bytes_available(int slot);
 int nbb_bytes_read(int slot);

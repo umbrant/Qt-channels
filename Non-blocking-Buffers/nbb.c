@@ -39,7 +39,7 @@ int nbb_nameserver_connect(const char* request, char** ret, int* ret_len)
   fclose(pFile); 
 
   nbb_insert_item(0, request, strlen(request));
-  kill(nameserver_pid, SIGUSR1);
+  kill(nameserver_pid, NBB_SIGNAL);
 
   // Poll until we get something
   do{ 
@@ -143,7 +143,7 @@ int nbb_init_service(int num_channels, const char* name)
       tmp = strtok(NULL, " ");
     }
 
-    signal(SIGUSR1, nbb_recv_data);
+    signal(NBB_SIGNAL, nbb_recv_data);
 
     sem_post(sem_id);
     free(recv);
@@ -228,7 +228,7 @@ int nbb_connect_service(const char* client_name, const char* service_name)
       ret_code = -1;
     } else {
       printf("** Connecting to service successful, channel: %d service pid: %d\n", channel_id, service_pid);
-      signal(SIGUSR1, nbb_recv_data);
+      signal(NBB_SIGNAL, nbb_recv_data);
     }
   }
 
@@ -275,18 +275,31 @@ void nbb_set_cb_new_data(const char* owner, cb_new_data_func func)
   }
 }
 
-int nbb_send(const char* destination, const char* msg, size_t msg_len)
+int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  int i;
-  // int retval;
-
-  printf("** dest: %s, msg: %s, msg_len: %d\n", destination, msg, (int) msg_len);
-  assert(destination != NULL && msg != NULL);
+  printf("** slot: %d, msg: %s, msg_len: %d\n", slot_id, msg, (int) msg_len);
+  assert(msg != NULL);
 
   if (msg_len == 0) {
     printf("! nbb_send(): nothing to send (0 length passed in)\n");
     return 0;
   }
+
+  assert(slot_id >= 0 && slot_id < SERVICE_MAX_CHANNELS && "Process not found");
+
+  nbb_insert_item(slot_id, msg, msg_len); 
+  kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
+
+  printf("** Send '%.*s' to slot %d\n", (int) msg_len, msg, slot_id);
+
+  return 0;
+
+}
+
+int nbb_send(const char* destination, const char* msg, size_t msg_len)
+{
+  int i;
+  // int retval;
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1; i < SERVICE_MAX_CHANNELS;i++) {
@@ -296,34 +309,16 @@ int nbb_send(const char* destination, const char* msg, size_t msg_len)
     }
   }
 
-  if(i == SERVICE_MAX_CHANNELS) {
-    printf("! nbb_send(): Process not found\n");
-    return -1;
-  }
+  return nbb_write_bytes(i, msg, msg_len);
 
-  nbb_insert_item(i, msg, msg_len); 
-  kill(connected_nodes[i].pid, SIGUSR1);
-
-  printf("** Send '%.*s' to %s\n", (int) msg_len, msg, destination);
-
-  /* Not needed
-  do { 
-    retval = nbb_read_item(i, (void**)&recv, &recv_len);
-  } while (retval == BUFFER_EMPTY || retval == BUFFER_EMPTY_PRODUCER_INSERTING); 
-
-  if(strcmp(recv, NEW_CONN_NOTIFY_MSG)) {
-    nbb_flush_shm(i, recv, recv_len);
-  }
-
-  printf("** Received '%.*s' from the service\n", (int) recv_len, recv);
-*/
-
-  return 0;
 }
 
 /* Called when the service gets new client data */
 void nbb_recv_data(int signum)
 {
+  signal(signum, nbb_recv_data);
+  return;
+
   int i;
   char* recv;
   size_t recv_len = 0;
@@ -332,7 +327,8 @@ void nbb_recv_data(int signum)
   int is_new_conn_msg = 0;
 
   // Attempt to debug Qt. XXX: Remove when done.
-  printf("***NBB***: Inside signal handler\n");
+  //printf("***NBB***: Inside signal handler\n");
+
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1;channel_list[i].in_use && i < SERVICE_MAX_CHANNELS;i++) {
@@ -344,18 +340,6 @@ void nbb_recv_data(int signum)
         recv[recv_len] = '\0';
 
         char* tmp = NULL;
-
-/*
-				char* msg_start = (char *) recv + NEW_CONN_NOTIFY_MSG_LEN + 1;
-				int name_len = 0;
-
-				connected_nodes[i].pid = (int) strtol(msg_start, &tmp, 10);
-				name_len = recv_len - 1 - NEW_CONN_NOTIFY_MSG_LEN - ((int) (tmp - recv));
-				connected_nodes[i].name = (char *) malloc(sizeof(char) * (name_len+1));
-				assert(connected_nodes[i].name != NULL);
-				strncpy(connected_nodes[i].name, tmp + 1, name_len);
-				connected_nodes[i].name[name_len] = '\0';
-*/
 
         strtok(recv, " ");
         tmp = strtok(NULL, " ");
@@ -401,7 +385,7 @@ void nbb_recv_data(int signum)
 
   }
 
-  signal(SIGUSR1, nbb_recv_data);
+  signal(NBB_SIGNAL, nbb_recv_data);
 }
 
 int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)
@@ -550,7 +534,7 @@ int nbb_read_bytes(int slot, char* buf, int size)
 
 int nbb_bytes_available(int slot)
 {
-  printf("slot: %d\n", slot);
+  //printf("slot: %d\n", slot);
   assert(slot >= 0 && slot < SERVICE_MAX_CHANNELS);
   return delay_buffers[slot].len;
 }

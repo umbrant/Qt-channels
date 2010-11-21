@@ -146,7 +146,7 @@ qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 {
     printf("writeData (%p): %.*s\n", this, maxSize, data);
-    int ret = nbb_insert_item(slotNumber, data, maxSize);
+    int ret = nbb_write_bytes(slotNumber, data, maxSize);
 	if(ret) {
 	    printf("WRITE ERROR! slotnumber %d \n", slotNumber);
 	}
