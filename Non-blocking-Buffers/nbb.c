@@ -316,10 +316,6 @@ int nbb_send(const char* destination, const char* msg, size_t msg_len)
 /* Called when the service gets new client data */
 void nbb_recv_data(int signum)
 {
-  signal(signum, nbb_recv_data);
-  return;
-
-#if 0
   int i;
   char* recv;
   size_t recv_len = 0;
@@ -328,7 +324,7 @@ void nbb_recv_data(int signum)
   int is_new_conn_msg = 0;
 
   // Attempt to debug Qt. XXX: Remove when done.
-  //printf("***NBB***: Inside signal handler\n");
+  printf("***NBB***: Inside signal handler\n");
 
 
   // Since i = 0 is already reserved for nameserver
@@ -366,8 +362,8 @@ void nbb_recv_data(int signum)
         channel_list[i].new_data(i);
       }
 
-      printf("** Received '%.*s' from shm id %d\n",
-             (int) recv_len, recv, channel_list[i].read_id);
+      printf("** Received '%.*s' from shm id %d slot %d\n",
+             (int) recv_len, recv, channel_list[i].read_id, i);
 
       if (!is_new_conn_msg) {
         nbb_flush_shm(i, recv, recv_len);
@@ -387,7 +383,6 @@ void nbb_recv_data(int signum)
   }
 
   signal(NBB_SIGNAL, nbb_recv_data);
-#endif
 }
 
 int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)

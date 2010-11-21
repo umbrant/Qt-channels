@@ -82,4 +82,6 @@ int main()
   free(array);
   free(msg);
   free(service_name);
+
+  return 0;
 }

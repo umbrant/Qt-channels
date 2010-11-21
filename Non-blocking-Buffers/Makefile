@@ -1,17 +1,17 @@
-CFLAGS=-Wall -g -ggdb -std=c99
+CFLAGS=-Wall -g -ggdb
 CC=gcc
 
 all: service client nameserver_main
 	rm -rf *.o
 
 service: nbb.o libnbb.a service.c
-	$(CC) $(CFLAGS) service.c -o service -L. -lnbb -lpthread -lrt 
+	$(CC) $(CFLAGS) service.c -o service -L. -lnbb -lrt
 
 client: nbb.o libnbb.a client.c
-	$(CC) $(CFLAGS) client.c -o client -L. -lnbb -lpthread -lrt 
+	$(CC) $(CFLAGS) client.c -o client -L. -lnbb -lrt 
 
 nameserver_main: libnbb.a libnameserver.a nameserver_main.c
-	$(CC) $(CFLAGS) nameserver_main.c -o nameserver -L. -lnbb -lnameserver -lpthread -lrt 
+	$(CC) $(CFLAGS) nameserver_main.c -o nameserver -L. -lnbb -lnameserver -lrt 
 
 # shared library
 libnbb.so.1.0.1: nbb.c
@@ -30,7 +30,9 @@ libnameserver.a: nameserver.o
 	ar rcs libnameserver.a nameserver.o
 
 nbb.o: nbb.c nbb.h
-	$(CC) $(CFLAGS) -c nbb.c
+	$(CC) $(CFLAGS) -c -fPIC nbb.c -S -o nbb.s
+	sed -i "s/__sysv_signal/signal/" nbb.s
+	$(CC) $(CFLAGS) -c -fPIC nbb.s
 
 nameserver.o: nameserver.c nameserver.h 
 	$(CC) $(CFLAGS) -c nameserver.c
