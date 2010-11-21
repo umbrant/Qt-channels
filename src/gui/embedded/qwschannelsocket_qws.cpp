@@ -191,14 +191,18 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
     QByteArray file_name = file.toAscii();
     const char *service_name = file_name.data();
 
-    if (::nbb_connect_service(client_name, service_name) < 0) {
+    int slot = ::nbb_connect_service(client_name, service_name);
+    if(slot < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
              << "Cannot connect to " << service_name << " service!" << endl;
         return false;
     }
 
+
     cout << "QWSChannelSocket::connectToLocalFile(): "
-         << "Connected to " << service_name << " service!" << endl;
+         << "Connected to " << service_name << " service on slot " << slot << endl;
+
+    this->setSocketDescriptor(slot);
 
     // Register for new incoming data event from nbb
     nbb_set_cb_new_data(client_name, client_on_new_available_data);
