@@ -117,6 +117,7 @@ static map<int, QWSChannelSocket*> g_clientSocketMap;
 // Function to handle new incoming data
 static void client_on_new_available_data(int slot_id)
 {
+    printf("client_on_new_available_data called (slot_id %d)\n", slot_id);
     assert(g_clientSocketMap.size() > 0);
     QWSChannelSocket *socket = g_clientSocketMap[slot_id];
     assert(socket != 0);
