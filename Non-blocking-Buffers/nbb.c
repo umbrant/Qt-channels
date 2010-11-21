@@ -319,6 +319,7 @@ void nbb_recv_data(int signum)
   signal(signum, nbb_recv_data);
   return;
 
+#if 0
   int i;
   char* recv;
   size_t recv_len = 0;
@@ -386,6 +387,7 @@ void nbb_recv_data(int signum)
   }
 
   signal(NBB_SIGNAL, nbb_recv_data);
+#endif
 }
 
 int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)
