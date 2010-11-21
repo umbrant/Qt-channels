@@ -117,6 +117,7 @@ static map<int, QWSChannelSocket*> g_clientSocketMap;
 // Function to handle new incoming data
 static void client_on_new_available_data(int slot_id)
 {
+    printf("client_on_new_available_data called (slot_id %d)\n", slot_id);
     assert(g_clientSocketMap.size() > 0);
     QWSChannelSocket *socket = g_clientSocketMap[slot_id];
     assert(socket != 0);
@@ -187,16 +188,21 @@ void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
 {
     const char *client_name = this->getSocketName();
-    const char *service_name = file.toAscii().data();
+    QByteArray file_name = file.toAscii();
+    const char *service_name = file_name.data();
 
-    if (::nbb_connect_service(client_name, service_name) < 0) {
+    int slot = ::nbb_connect_service(client_name, service_name);
+    if(slot < 0) {
         cout << "QWSChannelSocket::connectToLocalFile(): "
              << "Cannot connect to " << service_name << " service!" << endl;
         return false;
     }
 
+
     cout << "QWSChannelSocket::connectToLocalFile(): "
-         << "Connected to " << service_name << " service!" << endl;
+         << "Connected to " << service_name << " service on slot " << slot << endl;
+
+    this->setSocketDescriptor(slot);
 
     // Register for new incoming data event from nbb
     nbb_set_cb_new_data(client_name, client_on_new_available_data);
@@ -217,6 +223,7 @@ bool QWSChannelSocket::flush()
 bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode openMode)
 {
     assert(socketDescriptor >= 0);
+    printf("%s: old: %d new: %d \n", this->getSocketName(), this->socketDescriptor(), socketDescriptor);
 
     QChannelSocket::setSocketDescriptor(socketDescriptor, socketState, openMode);
 

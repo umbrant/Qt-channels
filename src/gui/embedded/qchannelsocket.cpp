@@ -85,6 +85,7 @@ QChannelSocket::QChannelSocket(QObject * parent)
 {
     slotNumber = -1;
     sockState = QAbstractSocket::UnconnectedState;
+    QIODevice::setOpenMode(QIODevice::ReadWrite);
 
     // Form a unique client name for nbb purposes
     socketName << "qchannelsocket@" << this;
@@ -137,15 +138,17 @@ qint64 QChannelSocket::bytesToWrite() const
 qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 {
 	qint64 bytes = nbb_read_bytes(slotNumber, data, maxSize);
+    printf("readData (%p): %.*s\n", this, bytes, data);
 	return bytes;
 }
 
 /*! \internal */
 qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 {
-    int ret = nbb_insert_item(slotNumber, data, maxSize);
-	if(!ret) {
-	    printf("WRITE ERROR!\n");
+    printf("writeData (%p): %.*s\n", this, maxSize, data);
+    int ret = nbb_write_bytes(slotNumber, data, maxSize);
+	if(ret) {
+	    printf("WRITE ERROR! slotnumber %d \n", slotNumber);
 	}
 	emit bytesWritten(maxSize);
 	return maxSize;
@@ -156,7 +159,7 @@ qint64 QChannelSocket::write(const QByteArray & byteArray) {
 }
 
 qint64 QChannelSocket::write(const char * data, qint64 maxSize) {
-    return writeData(data, maxSize);
+    return QChannelSocket::writeData(data, maxSize);
 }
 
 
@@ -165,10 +168,11 @@ int QChannelSocket::socketDescriptor()
     return slotNumber;
 }
 
-bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode)
+bool QChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode mode)
 {
     slotNumber = socketDescriptor;
     sockState = socketState;
+    QIODevice::setOpenMode(mode);
     return true;
 }
 

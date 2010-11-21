@@ -838,7 +838,7 @@ void QWSDisplay::Data::init()
 
         QWSIdentifyCommand cmd;
         cmd.setId(appName, QWSDisplay::Data::clientLock->id());
-#ifndef QT_NO_SXE
+/*#ifndef QT_NO_SXE
         QTransportAuth *a = QTransportAuth::getInstance();
         QTransportAuth::Data *d = a->connectTransport(
                 QTransportAuth::UnixStreamSock |
@@ -848,8 +848,9 @@ void QWSDisplay::Data::init()
         ad->setClient( csocket );
         cmd.write(ad);
 #else
+*/
         cmd.write(csocket);
-#endif
+//#endif
 
         // create(30); // not necessary, server will send ids anyway
         waitForConnection();
