@@ -219,6 +219,7 @@ bool QWSChannelSocket::flush()
 bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode openMode)
 {
     assert(socketDescriptor >= 0);
+    printf("%s: old: %d new: %d \n", this->getSocketName(), this->socketDescriptor(), socketDescriptor);
 
     QChannelSocket::setSocketDescriptor(socketDescriptor, socketState, openMode);
 
