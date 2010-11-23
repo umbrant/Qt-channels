@@ -109,6 +109,7 @@ const char *QChannelSocket::getSocketName(void)
  */
 void QChannelSocket::emitReadyRead()
 {
+    printf("'%s' emitting readyRead signal\n", getSocketName());
     emit readyRead();
 }
 
