@@ -127,6 +127,12 @@ qint64 QChannelSocket::bytesAvailable() const
     return avail;
 }
 
+/* Must be true */
+bool QChannelSocket::isSequential() const
+{
+    return true;
+}
+
 /*!
   Returns the number of enqueued bytes still to be written to the socket.
   */
@@ -151,10 +157,12 @@ qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 	return bytes;
 }
 
+/*
 qint64 QChannelSocket::read(char * data, qint64 maxSize)
 {
     return QChannelSocket::readData(data, maxSize);
 }
+*/
 
 /*! \internal */
 qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
@@ -174,6 +182,7 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 	return maxSize;
 }
 
+/*
 qint64 QChannelSocket::write(const QByteArray & byteArray) {
     return QChannelSocket::write(byteArray.data(), byteArray.length());
 }
@@ -181,7 +190,7 @@ qint64 QChannelSocket::write(const QByteArray & byteArray) {
 qint64 QChannelSocket::write(const char * data, qint64 maxSize) {
     return QChannelSocket::writeData(data, maxSize);
 }
-
+*/
 
 int QChannelSocket::socketDescriptor()
 {

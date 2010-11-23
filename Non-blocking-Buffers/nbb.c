@@ -294,7 +294,7 @@ void nbb_set_owner(int slot_id, const char *owner)
 
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
+  //printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
   assert(msg != NULL);
 
   if (msg_len == 0) {
@@ -307,7 +307,7 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
   nbb_insert_item(slot_id, msg, msg_len); 
   kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
 
-  printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
+  //printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
 
   return 0;
 
@@ -523,8 +523,7 @@ int nbb_read_bytes(int slot, char* buf, int size)
   assert(slot >= 0 && buf != NULL && size >= 0);
 
   delay_buffer_t* delay_buffer = &(delay_buffers[slot]);
-  printf("***NBB***: Delay buffer %d: %d/%d\n",
-         slot, delay_buffer->len, delay_buffer->capacity);
+  //printf("***NBB***: Delay buffer %d: %d/%d\n", slot, delay_buffer->len, delay_buffer->capacity);
   assert(delay_buffer->capacity >= delay_buffer->len);
 
   // Attempt to read 0 bytes or buffer has nothing to read
