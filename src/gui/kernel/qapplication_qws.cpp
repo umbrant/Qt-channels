@@ -990,6 +990,7 @@ void QWSDisplay::Data::fillQueue()
     int bytesRead = 0;
 #endif
     while (e) {
+        printf("fillQueue while loop\n");
 #ifndef QT_NO_QWS_MULTIPROCESS
         bytesRead += QWS_PROTOCOL_ITEM_SIZE((*e));
 #endif
@@ -1130,7 +1131,8 @@ void QWSDisplay::Data::waitForConnection()
             return;
         }
         csocket->flush();
-        csocket->waitForReadyRead(1000000);
+        csocket->waitForReadyRead(1000);
+        sleep(2);
     }
 
     csocket->flush();

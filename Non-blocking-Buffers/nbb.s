@@ -1378,9 +1378,12 @@ nbb_send:
 	.align 8
 .LC33:
 	.string	"***NBB***: New connection on slot %d from client_name: %s with pid: %d\n"
-	.align 8
 .LC34:
-	.string	"** Received '%.*s' from shm id %d slot %d\n"
+	.string	"** Received %zu bytes: "
+.LC35:
+	.string	"%02x"
+.LC36:
+	.string	" from shm id %d slot %d\n"
 	.text
 .globl nbb_recv_data
 	.type	nbb_recv_data, @function
@@ -1411,7 +1414,7 @@ nbb_recv_data:
 	.loc 1 331 0
 	movl	$1, -20(%rbp)
 	jmp	.L70
-.L77:
+.L79:
 	.loc 1 332 0
 	leaq	-40(%rbp), %rcx
 	leaq	-48(%rbp), %rdx
@@ -1423,6 +1426,7 @@ nbb_recv_data:
 	.loc 1 334 0
 	cmpl	$0, -24(%rbp)
 	jne	.L71
+.LBB4:
 	.loc 1 335 0
 	movq	-40(%rbp), %rax
 	movl	$7, %edx
@@ -1431,7 +1435,7 @@ nbb_recv_data:
 	call	memcmp@PLT
 	testl	%eax, %eax
 	jne	.L72
-.LBB4:
+.LBB5:
 	.loc 1 336 0
 	movq	-48(%rbp), %rax
 	leaq	1(%rax), %rdx
@@ -1516,7 +1520,7 @@ nbb_recv_data:
 	.loc 1 351 0
 	movl	$1, -28(%rbp)
 .L72:
-.LBE4:
+.LBE5:
 	.loc 1 355 0
 	cmpl	$0, -28(%rbp)
 	je	.L73
@@ -1599,6 +1603,37 @@ nbb_recv_data:
 	call	*%rdx
 .L74:
 	.loc 1 365 0
+	movq	-48(%rbp), %rdx
+	leaq	.LC34(%rip), %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	movl	$0, %eax
+	call	printf@PLT
+	.loc 1 368 0
+	movl	$0, -32(%rbp)
+	jmp	.L75
+.L76:
+	.loc 1 369 0
+	movq	-40(%rbp), %rdx
+	movl	-32(%rbp), %eax
+	cltq
+	leaq	(%rdx,%rax), %rax
+	movzbl	(%rax), %eax
+	movsbl	%al,%edx
+	leaq	.LC35(%rip), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	movl	$0, %eax
+	call	printf@PLT
+	.loc 1 368 0
+	addl	$1, -32(%rbp)
+.L75:
+	movl	-32(%rbp), %eax
+	movslq	%eax,%rdx
+	movq	-48(%rbp), %rax
+	cmpq	%rax, %rdx
+	jb	.L76
+	.loc 1 372 0
 	movl	-20(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1611,20 +1646,16 @@ nbb_recv_data:
 	addq	%rcx, %rax
 	addq	$16, %rax
 	movl	(%rax), %ecx
-	movq	-40(%rbp), %rdx
-	movq	-48(%rbp), %rax
-	movl	%eax, %ebx
-	leaq	.LC34(%rip), %rax
-	movl	-20(%rbp), %esi
-	movl	%esi, %r8d
-	movl	%ebx, %esi
+	leaq	.LC36(%rip), %rax
+	movl	-20(%rbp), %edx
+	movl	%ecx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
 	call	printf@PLT
-	.loc 1 368 0
+	.loc 1 375 0
 	cmpl	$0, -28(%rbp)
-	jne	.L75
-	.loc 1 369 0
+	jne	.L77
+	.loc 1 376 0
 	movq	-48(%rbp), %rax
 	movl	%eax, %edx
 	movq	-40(%rbp), %rcx
@@ -1632,14 +1663,15 @@ nbb_recv_data:
 	movq	%rcx, %rsi
 	movl	%eax, %edi
 	call	nbb_flush_shm@PLT
-.L75:
-	.loc 1 379 0
+.L77:
+	.loc 1 386 0
 	movq	$0, -48(%rbp)
-	.loc 1 380 0
+	.loc 1 387 0
 	movq	-40(%rbp), %rax
 	movq	%rax, %rdi
 	call	free@PLT
 .L71:
+.LBE4:
 	.loc 1 331 0
 	addl	$1, -20(%rbp)
 .L70:
@@ -1656,17 +1688,17 @@ nbb_recv_data:
 	addq	$80, %rax
 	movl	(%rax), %eax
 	testl	%eax, %eax
-	je	.L76
+	je	.L78
 	cmpl	$14, -20(%rbp)
-	jle	.L77
-.L76:
-	.loc 1 385 0
+	jle	.L79
+.L78:
+	.loc 1 392 0
 	call	__libc_current_sigrtmax@PLT
 	movq	nbb_recv_data@GOTPCREL(%rip), %rdx
 	movq	%rdx, %rsi
 	movl	%eax, %edi
 	call	signal@PLT
-	.loc 1 386 0
+	.loc 1 393 0
 	addq	$72, %rsp
 	popq	%rbx
 	leave
@@ -1676,18 +1708,18 @@ nbb_recv_data:
 	.size	nbb_recv_data, .-nbb_recv_data
 	.section	.rodata
 	.align 8
-.LC35:
-	.string	"! nbb_open_channel(): no free_slot"
-.LC36:
-	.string	"shmget"
 .LC37:
+	.string	"! nbb_open_channel(): no free_slot"
+.LC38:
+	.string	"shmget"
+.LC39:
 	.string	"shmat"
 	.text
 .globl nbb_open_channel
 	.type	nbb_open_channel, @function
 nbb_open_channel:
 .LFB9:
-	.loc 1 389 0
+	.loc 1 396 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI18:
@@ -1703,34 +1735,34 @@ nbb_open_channel:
 	movl	%esi, -44(%rbp)
 	movl	%edx, -48(%rbp)
 	movl	%ecx, -52(%rbp)
-	.loc 1 394 0
+	.loc 1 401 0
 	cmpl	$4000, -44(%rbp)
-	jne	.L80
+	jne	.L82
 	.cfi_offset 3, -32
 	.cfi_offset 12, -24
 	cmpl	$4001, -48(%rbp)
-	jne	.L80
-	.loc 1 395 0
+	jne	.L82
+	.loc 1 402 0
 	movl	$0, -24(%rbp)
-	.loc 1 394 0
-	jmp	.L81
-.L80:
-	.loc 1 398 0
+	.loc 1 401 0
+	jmp	.L83
+.L82:
+	.loc 1 405 0
 	movl	$0, %eax
 	call	nbb_free_channel_slot@PLT
 	movl	%eax, -24(%rbp)
-.L81:
-	.loc 1 401 0
+.L83:
+	.loc 1 408 0
 	cmpl	$-1, -24(%rbp)
-	jne	.L82
-	.loc 1 402 0
-	leaq	.LC35(%rip), %rdi
+	jne	.L84
+	.loc 1 409 0
+	leaq	.LC37(%rip), %rdi
 	call	puts@PLT
-	.loc 1 403 0
-	movl	$-1, %eax
-	jmp	.L83
-.L82:
 	.loc 1 410 0
+	movl	$-1, %eax
+	jmp	.L85
+.L84:
+	.loc 1 417 0
 	movl	-52(%rbp), %eax
 	movl	%eax, %edx
 	orl	$438, %edx
@@ -1740,15 +1772,15 @@ nbb_open_channel:
 	call	shmget@PLT
 	movl	%eax, -20(%rbp)
 	cmpl	$0, -20(%rbp)
-	jns	.L84
-	.loc 1 411 0
-	leaq	.LC36(%rip), %rdi
+	jns	.L86
+	.loc 1 418 0
+	leaq	.LC38(%rip), %rdi
 	call	perror@PLT
-	.loc 1 412 0
+	.loc 1 419 0
 	movl	$-1, %eax
-	jmp	.L83
-.L84:
-	.loc 1 414 0
+	jmp	.L85
+.L86:
+	.loc 1 421 0
 	movl	-20(%rbp), %eax
 	movl	$0, %edx
 	movl	$0, %esi
@@ -1756,21 +1788,21 @@ nbb_open_channel:
 	call	shmat@PLT
 	movq	%rax, -32(%rbp)
 	cmpq	$-1, -32(%rbp)
-	jne	.L85
-	.loc 1 415 0
-	leaq	.LC37(%rip), %rdi
+	jne	.L87
+	.loc 1 422 0
+	leaq	.LC39(%rip), %rdi
 	call	perror@PLT
-	.loc 1 416 0
+	.loc 1 423 0
 	movl	$-1, %eax
-	jmp	.L83
-.L85:
-	.loc 1 419 0
+	jmp	.L85
+.L87:
+	.loc 1 426 0
 	movq	-32(%rbp), %rax
 	movl	$8192, %edx
 	movl	$0, %esi
 	movq	%rax, %rdi
 	call	memset@PLT
-	.loc 1 421 0
+	.loc 1 428 0
 	movl	-24(%rbp), %eax
 	movq	-32(%rbp), %rbx
 	movq	channel_list@GOTPCREL(%rip), %rcx
@@ -1782,7 +1814,7 @@ nbb_open_channel:
 	addq	%rdx, %rax
 	salq	$3, %rax
 	movq	%rbx, (%rax,%rcx)
-	.loc 1 422 0
+	.loc 1 429 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1794,7 +1826,7 @@ nbb_open_channel:
 	salq	$3, %rax
 	movq	(%rax,%rcx), %rax
 	movw	$4096, 12(%rax)
-	.loc 1 423 0
+	.loc 1 430 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1806,7 +1838,7 @@ nbb_open_channel:
 	salq	$3, %rax
 	movq	(%rax,%rcx), %rax
 	movw	$4096, 10(%rax)
-	.loc 1 424 0
+	.loc 1 431 0
 	movl	-24(%rbp), %eax
 	movq	-32(%rbp), %rdx
 	leaq	4096(%rdx), %rbx
@@ -1819,7 +1851,7 @@ nbb_open_channel:
 	addq	%rdx, %rax
 	salq	$3, %rax
 	movq	%rbx, 8(%rax,%rcx)
-	.loc 1 425 0
+	.loc 1 432 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1833,7 +1865,7 @@ nbb_open_channel:
 	leaq	16(%rax), %rdx
 	movl	-44(%rbp), %eax
 	movl	%eax, (%rdx)
-	.loc 1 426 0
+	.loc 1 433 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1846,11 +1878,11 @@ nbb_open_channel:
 	addq	%rcx, %rax
 	addq	$16, %rax
 	movl	$0, 4(%rax)
-	.loc 1 429 0
+	.loc 1 436 0
 	movl	$-1, -20(%rbp)
-	.loc 1 430 0
+	.loc 1 437 0
 	movq	$-1, -32(%rbp)
-	.loc 1 431 0
+	.loc 1 438 0
 	movl	-52(%rbp), %eax
 	movl	%eax, %edx
 	orl	$438, %edx
@@ -1860,15 +1892,15 @@ nbb_open_channel:
 	call	shmget@PLT
 	movl	%eax, -20(%rbp)
 	cmpl	$0, -20(%rbp)
-	jns	.L86
-	.loc 1 432 0
-	leaq	.LC36(%rip), %rdi
+	jns	.L88
+	.loc 1 439 0
+	leaq	.LC38(%rip), %rdi
 	call	perror@PLT
-	.loc 1 433 0
+	.loc 1 440 0
 	movl	$-1, %eax
-	jmp	.L83
-.L86:
-	.loc 1 435 0
+	jmp	.L85
+.L88:
+	.loc 1 442 0
 	movl	-20(%rbp), %eax
 	movl	$0, %edx
 	movl	$0, %esi
@@ -1876,21 +1908,21 @@ nbb_open_channel:
 	call	shmat@PLT
 	movq	%rax, -32(%rbp)
 	cmpq	$-1, -32(%rbp)
-	jne	.L87
-	.loc 1 436 0
-	leaq	.LC37(%rip), %rdi
+	jne	.L89
+	.loc 1 443 0
+	leaq	.LC39(%rip), %rdi
 	call	perror@PLT
-	.loc 1 437 0
+	.loc 1 444 0
 	movl	$-1, %eax
-	jmp	.L83
-.L87:
-	.loc 1 440 0
+	jmp	.L85
+.L89:
+	.loc 1 447 0
 	movq	-32(%rbp), %rax
 	movl	$8192, %edx
 	movl	$0, %esi
 	movq	%rax, %rdi
 	call	memset@PLT
-	.loc 1 442 0
+	.loc 1 449 0
 	movl	-24(%rbp), %eax
 	movq	-32(%rbp), %rcx
 	movq	channel_list@GOTPCREL(%rip), %rbx
@@ -1904,7 +1936,7 @@ nbb_open_channel:
 	addq	%rbx, %rax
 	addq	$16, %rax
 	movq	%rcx, 8(%rax)
-	.loc 1 443 0
+	.loc 1 450 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1918,7 +1950,7 @@ nbb_open_channel:
 	addq	$16, %rax
 	movq	8(%rax), %rax
 	movw	$4096, 12(%rax)
-	.loc 1 444 0
+	.loc 1 451 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1932,7 +1964,7 @@ nbb_open_channel:
 	addq	$16, %rax
 	movq	8(%rax), %rax
 	movw	$4096, 10(%rax)
-	.loc 1 445 0
+	.loc 1 452 0
 	movl	-24(%rbp), %eax
 	movq	-32(%rbp), %rdx
 	leaq	4096(%rdx), %rcx
@@ -1947,7 +1979,7 @@ nbb_open_channel:
 	addq	%rbx, %rax
 	addq	$32, %rax
 	movq	%rcx, (%rax)
-	.loc 1 446 0
+	.loc 1 453 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1961,7 +1993,7 @@ nbb_open_channel:
 	leaq	32(%rax), %rdx
 	movl	-48(%rbp), %eax
 	movl	%eax, 8(%rdx)
-	.loc 1 447 0
+	.loc 1 454 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1974,7 +2006,7 @@ nbb_open_channel:
 	addq	%rcx, %rax
 	addq	$32, %rax
 	movl	$0, 12(%rax)
-	.loc 1 449 0
+	.loc 1 456 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -1987,10 +2019,10 @@ nbb_open_channel:
 	addq	%rcx, %rax
 	addq	$80, %rax
 	movl	$1, (%rax)
-	.loc 1 451 0
+	.loc 1 458 0
 	cmpq	$0, -40(%rbp)
-	je	.L88
-	.loc 1 452 0
+	je	.L90
+	.loc 1 459 0
 	movl	-24(%rbp), %r12d
 	movq	-40(%rbp), %rax
 	movq	%rax, %rdi
@@ -2010,7 +2042,7 @@ nbb_open_channel:
 	addq	%rbx, %rax
 	addq	$48, %rax
 	movq	%rcx, (%rax)
-	.loc 1 453 0
+	.loc 1 460 0
 	movl	-24(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2027,8 +2059,8 @@ nbb_open_channel:
 	movq	%rdx, %rsi
 	movq	%rax, %rdi
 	call	strcpy@PLT
-.L88:
-	.loc 1 456 0
+.L90:
+	.loc 1 463 0
 	movl	-24(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	%rdx, %rax
@@ -2042,10 +2074,10 @@ nbb_open_channel:
 	movl	$0, %esi
 	movq	%rax, %rdi
 	call	memset@PLT
-	.loc 1 458 0
+	.loc 1 465 0
 	movl	-24(%rbp), %eax
-.L83:
-	.loc 1 459 0
+.L85:
+	.loc 1 466 0
 	addq	$48, %rsp
 	popq	%rbx
 	popq	%r12
@@ -2055,14 +2087,14 @@ nbb_open_channel:
 .LFE9:
 	.size	nbb_open_channel, .-nbb_open_channel
 	.section	.rodata
-.LC38:
+.LC40:
 	.string	"index >= 0 && index < 15"
 	.text
 .globl nbb_close_channel
 	.type	nbb_close_channel, @function
 nbb_close_channel:
 .LFB10:
-	.loc 1 462 0
+	.loc 1 469 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI20:
@@ -2073,19 +2105,19 @@ nbb_close_channel:
 	.cfi_def_cfa_register 6
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
-	.loc 1 465 0
+	.loc 1 472 0
 	cmpl	$0, -4(%rbp)
-	js	.L91
+	js	.L93
 	cmpl	$14, -4(%rbp)
-	jle	.L92
-.L91:
-	leaq	__PRETTY_FUNCTION__.3918(%rip), %rcx
-	movl	$465, %edx
+	jle	.L94
+.L93:
+	leaq	__PRETTY_FUNCTION__.3929(%rip), %rcx
+	movl	$472, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC38(%rip), %rdi
+	leaq	.LC40(%rip), %rdi
 	call	__assert_fail@PLT
-.L92:
-	.loc 1 467 0
+.L94:
+	.loc 1 474 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2098,7 +2130,7 @@ nbb_close_channel:
 	movq	(%rax,%rcx), %rax
 	movq	%rax, %rdi
 	call	shmdt@PLT
-	.loc 1 468 0
+	.loc 1 475 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2116,12 +2148,12 @@ nbb_close_channel:
 	movl	%eax, %edi
 	call	shmctl@PLT
 	cmpl	$-1, %eax
-	jne	.L93
-	.loc 1 469 0
+	jne	.L95
+	.loc 1 476 0
 	movl	$-1, %eax
-	jmp	.L94
-.L93:
-	.loc 1 472 0
+	jmp	.L96
+.L95:
+	.loc 1 479 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2136,7 +2168,7 @@ nbb_close_channel:
 	movq	8(%rax), %rax
 	movq	%rax, %rdi
 	call	shmdt@PLT
-	.loc 1 473 0
+	.loc 1 480 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2154,12 +2186,12 @@ nbb_close_channel:
 	movl	%eax, %edi
 	call	shmctl@PLT
 	cmpl	$-1, %eax
-	jne	.L95
-	.loc 1 474 0
+	jne	.L97
+	.loc 1 481 0
 	movl	$-1, %eax
-	jmp	.L94
-.L95:
-	.loc 1 477 0
+	jmp	.L96
+.L97:
+	.loc 1 484 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2172,10 +2204,10 @@ nbb_close_channel:
 	addq	%rcx, %rax
 	addq	$80, %rax
 	movl	$0, (%rax)
-	.loc 1 478 0
+	.loc 1 485 0
 	movl	$0, %eax
-.L94:
-	.loc 1 479 0
+.L96:
+	.loc 1 486 0
 	leave
 	ret
 	.cfi_endproc
@@ -2185,7 +2217,7 @@ nbb_close_channel:
 	.type	nbb_free_channel_slot, @function
 nbb_free_channel_slot:
 .LFB11:
-	.loc 1 482 0
+	.loc 1 489 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI22:
@@ -2194,11 +2226,11 @@ nbb_free_channel_slot:
 	.cfi_offset 6, -16
 .LCFI23:
 	.cfi_def_cfa_register 6
-	.loc 1 485 0
+	.loc 1 492 0
 	movl	$0, -4(%rbp)
-	jmp	.L98
-.L101:
-	.loc 1 486 0
+	jmp	.L100
+.L103:
+	.loc 1 493 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2212,20 +2244,20 @@ nbb_free_channel_slot:
 	addq	$80, %rax
 	movl	(%rax), %eax
 	testl	%eax, %eax
-	jne	.L99
-	.loc 1 487 0
+	jne	.L101
+	.loc 1 494 0
 	movl	-4(%rbp), %eax
-	jmp	.L100
-.L99:
-	.loc 1 485 0
-	addl	$1, -4(%rbp)
-.L98:
-	cmpl	$14, -4(%rbp)
-	jle	.L101
-	.loc 1 491 0
-	movl	$-1, %eax
-.L100:
+	jmp	.L102
+.L101:
 	.loc 1 492 0
+	addl	$1, -4(%rbp)
+.L100:
+	cmpl	$14, -4(%rbp)
+	jle	.L103
+	.loc 1 498 0
+	movl	$-1, %eax
+.L102:
+	.loc 1 499 0
 	leave
 	ret
 	.cfi_endproc
@@ -2233,23 +2265,23 @@ nbb_free_channel_slot:
 	.size	nbb_free_channel_slot, .-nbb_free_channel_slot
 	.section	.rodata
 	.align 8
-.LC39:
+.LC41:
 	.string	"slot >= 0 && buf != ((void *)0) && size >= 0"
 	.align 8
-.LC40:
+.LC42:
 	.string	"***NBB***: Delay buffer %d: %d/%d\n"
 	.align 8
-.LC41:
+.LC43:
 	.string	"delay_buffer->capacity >= delay_buffer->len"
 	.align 8
-.LC42:
+.LC44:
 	.string	"delay_buffer->content != ((void *)0) && delay_buffer->len > 0"
 	.text
 .globl nbb_read_bytes
 	.type	nbb_read_bytes, @function
 nbb_read_bytes:
 .LFB12:
-	.loc 1 498 0
+	.loc 1 505 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI24:
@@ -2263,22 +2295,22 @@ nbb_read_bytes:
 	movl	%edi, -36(%rbp)
 	movq	%rsi, -48(%rbp)
 	movl	%edx, -52(%rbp)
-	.loc 1 499 0
+	.loc 1 506 0
 	cmpl	$0, -36(%rbp)
-	js	.L104
+	js	.L106
 	.cfi_offset 3, -24
 	cmpq	$0, -48(%rbp)
-	je	.L104
+	je	.L106
 	cmpl	$0, -52(%rbp)
-	jns	.L105
-.L104:
-	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
-	movl	$499, %edx
+	jns	.L107
+.L106:
+	leaq	__PRETTY_FUNCTION__.3965(%rip), %rcx
+	movl	$506, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC39(%rip), %rdi
+	leaq	.LC41(%rip), %rdi
 	call	__assert_fail@PLT
-.L105:
-	.loc 1 501 0
+.L107:
+	.loc 1 508 0
 	movl	-36(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	%rdx, %rax
@@ -2289,73 +2321,73 @@ nbb_read_bytes:
 	movq	delay_buffers@GOTPCREL(%rip), %rax
 	leaq	(%rdx,%rax), %rax
 	movq	%rax, -32(%rbp)
-	.loc 1 502 0
+	.loc 1 509 0
 	movq	-32(%rbp), %rax
 	movl	12(%rax), %ecx
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %edx
-	leaq	.LC40(%rip), %rax
+	leaq	.LC42(%rip), %rax
 	movl	-36(%rbp), %ebx
 	movl	%ebx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
 	call	printf@PLT
-	.loc 1 504 0
+	.loc 1 511 0
 	movq	-32(%rbp), %rax
 	movl	12(%rax), %edx
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %eax
 	cmpl	%eax, %edx
-	jge	.L106
-	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
-	movl	$504, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC41(%rip), %rdi
-	call	__assert_fail@PLT
-.L106:
-	.loc 1 507 0
-	cmpl	$0, -52(%rbp)
-	je	.L107
-	movq	-32(%rbp), %rax
-	movq	(%rax), %rax
-	testq	%rax, %rax
-	je	.L107
-	movq	-32(%rbp), %rax
-	movl	8(%rax), %eax
-	testl	%eax, %eax
-	jne	.L108
-.L107:
-	.loc 1 508 0
-	movl	$0, %eax
-	jmp	.L109
-.L108:
-	.loc 1 511 0
-	movq	-32(%rbp), %rax
-	movq	(%rax), %rax
-	testq	%rax, %rax
-	je	.L110
-	movq	-32(%rbp), %rax
-	movl	8(%rax), %eax
-	testl	%eax, %eax
-	jg	.L111
-.L110:
-	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
+	jge	.L108
+	leaq	__PRETTY_FUNCTION__.3965(%rip), %rcx
 	movl	$511, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC42(%rip), %rdi
+	leaq	.LC43(%rip), %rdi
 	call	__assert_fail@PLT
-.L111:
+.L108:
 	.loc 1 514 0
+	cmpl	$0, -52(%rbp)
+	je	.L109
+	movq	-32(%rbp), %rax
+	movq	(%rax), %rax
+	testq	%rax, %rax
+	je	.L109
+	movq	-32(%rbp), %rax
+	movl	8(%rax), %eax
+	testl	%eax, %eax
+	jne	.L110
+.L109:
+	.loc 1 515 0
+	movl	$0, %eax
+	jmp	.L111
+.L110:
+	.loc 1 518 0
+	movq	-32(%rbp), %rax
+	movq	(%rax), %rax
+	testq	%rax, %rax
+	je	.L112
+	movq	-32(%rbp), %rax
+	movl	8(%rax), %eax
+	testl	%eax, %eax
+	jg	.L113
+.L112:
+	leaq	__PRETTY_FUNCTION__.3965(%rip), %rcx
+	movl	$518, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC44(%rip), %rdi
+	call	__assert_fail@PLT
+.L113:
+	.loc 1 521 0
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %eax
 	cmpl	-52(%rbp), %eax
-	jge	.L112
-	.loc 1 515 0
+	jge	.L114
+	.loc 1 522 0
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %eax
 	movl	%eax, -52(%rbp)
-.L112:
-	.loc 1 519 0
+.L114:
+	.loc 1 526 0
 	movl	-52(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	-32(%rbp), %rax
@@ -2364,7 +2396,7 @@ nbb_read_bytes:
 	movq	%rcx, %rsi
 	movq	%rax, %rdi
 	call	memcpy@PLT
-	.loc 1 520 0
+	.loc 1 527 0
 	movl	-36(%rbp), %esi
 	movl	-36(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
@@ -2391,15 +2423,15 @@ nbb_read_bytes:
 	addq	%rbx, %rax
 	addq	$16, %rax
 	movl	%ecx, 4(%rax)
-	.loc 1 523 0
+	.loc 1 530 0
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %eax
 	subl	-52(%rbp), %eax
 	movl	%eax, -20(%rbp)
-	.loc 1 524 0
+	.loc 1 531 0
 	cmpl	$0, -20(%rbp)
-	jle	.L113
-	.loc 1 525 0
+	jle	.L115
+	.loc 1 532 0
 	movl	-20(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	-32(%rbp), %rax
@@ -2412,15 +2444,15 @@ nbb_read_bytes:
 	movq	%rcx, %rsi
 	movq	%rax, %rdi
 	call	memmove@PLT
-.L113:
-	.loc 1 527 0
+.L115:
+	.loc 1 534 0
 	movq	-32(%rbp), %rax
 	movl	-20(%rbp), %edx
 	movl	%edx, 8(%rax)
-	.loc 1 529 0
+	.loc 1 536 0
 	movl	-52(%rbp), %eax
-.L109:
-	.loc 1 530 0
+.L111:
+	.loc 1 537 0
 	addq	$56, %rsp
 	popq	%rbx
 	leave
@@ -2429,14 +2461,14 @@ nbb_read_bytes:
 .LFE12:
 	.size	nbb_read_bytes, .-nbb_read_bytes
 	.section	.rodata
-.LC43:
+.LC45:
 	.string	"slot >= 0 && slot < 15"
 	.text
 .globl nbb_bytes_available
 	.type	nbb_bytes_available, @function
 nbb_bytes_available:
 .LFB13:
-	.loc 1 533 0
+	.loc 1 540 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI26:
@@ -2447,19 +2479,19 @@ nbb_bytes_available:
 	.cfi_def_cfa_register 6
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
-	.loc 1 535 0
+	.loc 1 542 0
 	cmpl	$0, -4(%rbp)
-	js	.L116
+	js	.L118
 	cmpl	$14, -4(%rbp)
-	jle	.L117
-.L116:
-	leaq	__PRETTY_FUNCTION__.4002(%rip), %rcx
-	movl	$535, %edx
+	jle	.L119
+.L118:
+	leaq	__PRETTY_FUNCTION__.4013(%rip), %rcx
+	movl	$542, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC43(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
-.L117:
-	.loc 1 536 0
+.L119:
+	.loc 1 543 0
 	movl	-4(%rbp), %eax
 	movq	delay_buffers@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2468,7 +2500,7 @@ nbb_bytes_available:
 	addq	%rdx, %rax
 	salq	$3, %rax
 	movl	8(%rax,%rcx), %eax
-	.loc 1 537 0
+	.loc 1 544 0
 	leave
 	ret
 	.cfi_endproc
@@ -2478,7 +2510,7 @@ nbb_bytes_available:
 	.type	nbb_bytes_read, @function
 nbb_bytes_read:
 .LFB14:
-	.loc 1 540 0
+	.loc 1 547 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI28:
@@ -2489,19 +2521,19 @@ nbb_bytes_read:
 	.cfi_def_cfa_register 6
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
-	.loc 1 541 0
+	.loc 1 548 0
 	cmpl	$0, -4(%rbp)
-	js	.L120
+	js	.L122
 	cmpl	$14, -4(%rbp)
-	jle	.L121
-.L120:
-	leaq	__PRETTY_FUNCTION__.4011(%rip), %rcx
-	movl	$541, %edx
+	jle	.L123
+.L122:
+	leaq	__PRETTY_FUNCTION__.4022(%rip), %rcx
+	movl	$548, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC43(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
-.L121:
-	.loc 1 542 0
+.L123:
+	.loc 1 549 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2514,7 +2546,7 @@ nbb_bytes_read:
 	addq	%rcx, %rax
 	addq	$16, %rax
 	movl	4(%rax), %eax
-	.loc 1 543 0
+	.loc 1 550 0
 	leave
 	ret
 	.cfi_endproc
@@ -2524,7 +2556,7 @@ nbb_bytes_read:
 	.type	nbb_bytes_written, @function
 nbb_bytes_written:
 .LFB15:
-	.loc 1 546 0
+	.loc 1 553 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI30:
@@ -2535,19 +2567,19 @@ nbb_bytes_written:
 	.cfi_def_cfa_register 6
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
-	.loc 1 547 0
+	.loc 1 554 0
 	cmpl	$0, -4(%rbp)
-	js	.L124
+	js	.L126
 	cmpl	$14, -4(%rbp)
-	jle	.L125
-.L124:
-	leaq	__PRETTY_FUNCTION__.4020(%rip), %rcx
-	movl	$547, %edx
+	jle	.L127
+.L126:
+	leaq	__PRETTY_FUNCTION__.4031(%rip), %rcx
+	movl	$554, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC43(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
-.L125:
-	.loc 1 548 0
+.L127:
+	.loc 1 555 0
 	movl	-4(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2560,7 +2592,7 @@ nbb_bytes_written:
 	addq	%rcx, %rax
 	addq	$32, %rax
 	movl	12(%rax), %eax
-	.loc 1 549 0
+	.loc 1 556 0
 	leave
 	ret
 	.cfi_endproc
@@ -2568,14 +2600,14 @@ nbb_bytes_written:
 	.size	nbb_bytes_written, .-nbb_bytes_written
 	.section	.rodata
 	.align 8
-.LC44:
+.LC46:
 	.string	"array_to_flush != ((void *)0) && size >= 0"
 	.text
 .globl nbb_flush_shm
 	.type	nbb_flush_shm, @function
 nbb_flush_shm:
 .LFB16:
-	.loc 1 552 0
+	.loc 1 559 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI32:
@@ -2588,35 +2620,35 @@ nbb_flush_shm:
 	movl	%edi, -20(%rbp)
 	movq	%rsi, -32(%rbp)
 	movl	%edx, -36(%rbp)
-	.loc 1 553 0
+	.loc 1 560 0
 	cmpl	$0, -20(%rbp)
-	js	.L128
+	js	.L130
 	cmpl	$14, -20(%rbp)
-	jle	.L129
-.L128:
-	leaq	__PRETTY_FUNCTION__.4031(%rip), %rcx
-	movl	$553, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC43(%rip), %rdi
-	call	__assert_fail@PLT
-.L129:
-	.loc 1 554 0
-	cmpq	$0, -32(%rbp)
-	je	.L130
-	cmpl	$0, -36(%rbp)
-	jns	.L131
+	jle	.L131
 .L130:
-	leaq	__PRETTY_FUNCTION__.4031(%rip), %rcx
-	movl	$554, %edx
+	leaq	__PRETTY_FUNCTION__.4042(%rip), %rcx
+	movl	$560, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC44(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
 .L131:
-	.loc 1 556 0
+	.loc 1 561 0
+	cmpq	$0, -32(%rbp)
+	je	.L132
 	cmpl	$0, -36(%rbp)
-	je	.L137
+	jns	.L133
 .L132:
-	.loc 1 559 0
+	leaq	__PRETTY_FUNCTION__.4042(%rip), %rcx
+	movl	$561, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC46(%rip), %rdi
+	call	__assert_fail@PLT
+.L133:
+	.loc 1 563 0
+	cmpl	$0, -36(%rbp)
+	je	.L139
+.L134:
+	.loc 1 566 0
 	movl	-20(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	%rdx, %rax
@@ -2627,26 +2659,26 @@ nbb_flush_shm:
 	movq	delay_buffers@GOTPCREL(%rip), %rax
 	leaq	(%rdx,%rax), %rax
 	movq	%rax, -16(%rbp)
-	.loc 1 560 0
+	.loc 1 567 0
 	movq	-16(%rbp), %rax
 	movl	8(%rax), %eax
 	addl	-36(%rbp), %eax
 	movl	%eax, -4(%rbp)
-	.loc 1 563 0
+	.loc 1 570 0
 	movq	-16(%rbp), %rax
 	movl	12(%rax), %eax
 	cmpl	-4(%rbp), %eax
-	jge	.L134
-	.loc 1 565 0
+	jge	.L136
+	.loc 1 572 0
 	movq	-16(%rbp), %rax
 	movl	12(%rax), %eax
 	testl	%eax, %eax
-	jne	.L135
-	.loc 1 566 0
+	jne	.L137
+	.loc 1 573 0
 	movq	-16(%rbp), %rax
 	movl	$1000, 12(%rax)
-.L135:
-	.loc 1 568 0
+.L137:
+	.loc 1 575 0
 	movq	-16(%rbp), %rax
 	movl	12(%rax), %eax
 	addl	%eax, %eax
@@ -2659,14 +2691,14 @@ nbb_flush_shm:
 	movq	%rax, %rdx
 	movq	-16(%rbp), %rax
 	movq	%rdx, (%rax)
-	.loc 1 569 0
+	.loc 1 576 0
 	movq	-16(%rbp), %rax
 	movl	12(%rax), %eax
 	leal	(%rax,%rax), %edx
 	movq	-16(%rbp), %rax
 	movl	%edx, 12(%rax)
-.L134:
-	.loc 1 573 0
+.L136:
+	.loc 1 580 0
 	movl	-36(%rbp), %eax
 	movslq	%eax,%rdx
 	movq	-16(%rbp), %rax
@@ -2679,16 +2711,16 @@ nbb_flush_shm:
 	movq	%rax, %rsi
 	movq	%rcx, %rdi
 	call	memcpy@PLT
-	.loc 1 574 0
+	.loc 1 581 0
 	movq	-16(%rbp), %rax
 	movl	-4(%rbp), %edx
 	movl	%edx, 8(%rax)
-	jmp	.L136
-.L137:
-	.loc 1 557 0
+	jmp	.L138
+.L139:
+	.loc 1 564 0
 	nop
-.L136:
-	.loc 1 578 0
+.L138:
+	.loc 1 585 0
 	leave
 	ret
 	.cfi_endproc
@@ -2696,22 +2728,22 @@ nbb_flush_shm:
 	.size	nbb_flush_shm, .-nbb_flush_shm
 	.section	.rodata
 	.align 8
-.LC45:
+.LC47:
 	.string	"channel_id >= 0 && channel_id < 15"
 	.align 8
-.LC46:
+.LC48:
 	.string	"ptr_to_item != ((void *)0) && size >= 0"
-.LC47:
+.LC49:
 	.string	"else..."
 	.align 8
-.LC48:
+.LC50:
 	.string	"poff: %d psize: %d size: %zu bsize: %d\n"
 	.text
 .globl nbb_insert_item
 	.type	nbb_insert_item, @function
 nbb_insert_item:
 .LFB17:
-	.loc 1 581 0
+	.loc 1 588 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI34:
@@ -2725,29 +2757,29 @@ nbb_insert_item:
 	movl	%edi, -52(%rbp)
 	movq	%rsi, -64(%rbp)
 	movq	%rdx, -72(%rbp)
-	.loc 1 582 0
+	.loc 1 589 0
 	cmpl	$0, -52(%rbp)
-	js	.L139
+	js	.L141
 	.cfi_offset 3, -24
 	cmpl	$14, -52(%rbp)
-	jle	.L140
-.L139:
-	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
-	movl	$582, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC45(%rip), %rdi
-	call	__assert_fail@PLT
-.L140:
-	.loc 1 583 0
-	cmpq	$0, -64(%rbp)
-	jne	.L141
-	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
-	movl	$583, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC46(%rip), %rdi
-	call	__assert_fail@PLT
+	jle	.L142
 .L141:
-	.loc 1 585 0
+	leaq	__PRETTY_FUNCTION__.4080(%rip), %rcx
+	movl	$589, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC47(%rip), %rdi
+	call	__assert_fail@PLT
+.L142:
+	.loc 1 590 0
+	cmpq	$0, -64(%rbp)
+	jne	.L143
+	leaq	__PRETTY_FUNCTION__.4080(%rip), %rcx
+	movl	$590, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC48(%rip), %rdi
+	call	__assert_fail@PLT
+.L143:
+	.loc 1 592 0
 	movl	-52(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2761,7 +2793,7 @@ nbb_insert_item:
 	addq	$16, %rax
 	movq	8(%rax), %rax
 	movq	%rax, -32(%rbp)
-	.loc 1 586 0
+	.loc 1 593 0
 	movl	-52(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -2775,32 +2807,32 @@ nbb_insert_item:
 	addq	$32, %rax
 	movq	(%rax), %rax
 	movq	%rax, -40(%rbp)
-	.loc 1 588 0
+	.loc 1 595 0
 	movq	-32(%rbp), %rax
 	movzwl	(%rax), %eax
 	movw	%ax, -18(%rbp)
-	.loc 1 590 0
+	.loc 1 597 0
 	cmpl	$0, -52(%rbp)
-	js	.L142
+	js	.L144
 	cmpl	$14, -52(%rbp)
-	jle	.L143
-.L142:
-	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
-	movl	$590, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC45(%rip), %rdi
-	call	__assert_fail@PLT
-.L143:
-	.loc 1 591 0
-	cmpq	$0, -64(%rbp)
-	jne	.L144
-	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
-	movl	$591, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC46(%rip), %rdi
-	call	__assert_fail@PLT
+	jle	.L145
 .L144:
-	.loc 1 593 0
+	leaq	__PRETTY_FUNCTION__.4080(%rip), %rcx
+	movl	$597, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC47(%rip), %rdi
+	call	__assert_fail@PLT
+.L145:
+	.loc 1 598 0
+	cmpq	$0, -64(%rbp)
+	jne	.L146
+	leaq	__PRETTY_FUNCTION__.4080(%rip), %rcx
+	movl	$598, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC48(%rip), %rdi
+	call	__assert_fail@PLT
+.L146:
+	.loc 1 600 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	movzwl	%ax, %edx
@@ -2809,12 +2841,12 @@ nbb_insert_item:
 	subl	%eax, %ecx
 	movl	%ecx, %eax
 	cmpl	$512, %eax
-	jne	.L145
-	.loc 1 594 0
+	jne	.L147
+	.loc 1 601 0
 	movl	$1, %eax
-	jmp	.L146
-.L145:
-	.loc 1 597 0
+	jmp	.L148
+.L147:
+	.loc 1 604 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	movzwl	%ax, %edx
@@ -2823,12 +2855,12 @@ nbb_insert_item:
 	subl	%eax, %ebx
 	movl	%ebx, %eax
 	cmpl	$511, %eax
-	jne	.L147
-	.loc 1 598 0
+	jne	.L149
+	.loc 1 605 0
 	movl	$2, %eax
-	jmp	.L146
-.L147:
-	.loc 1 607 0
+	jmp	.L148
+.L149:
+	.loc 1 614 0
 	movq	-32(%rbp), %rax
 	leaq	14(%rax), %rcx
 	movq	-32(%rbp), %rax
@@ -2848,16 +2880,16 @@ nbb_insert_item:
 	salq	$2, %rax
 	leaq	(%rcx,%rax), %rax
 	movq	%rax, -48(%rbp)
-	.loc 1 611 0
+	.loc 1 618 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	testw	%ax, %ax
-	jne	.L148
-	.loc 1 612 0
+	jne	.L150
+	.loc 1 619 0
 	movl	$0, -24(%rbp)
-	jmp	.L149
-.L148:
-	.loc 1 614 0
+	jmp	.L151
+.L150:
+	.loc 1 621 0
 	movq	-48(%rbp), %rax
 	movzwl	(%rax), %eax
 	movzwl	%ax, %edx
@@ -2872,8 +2904,8 @@ nbb_insert_item:
 	movzwl	12(%rax), %eax
 	movzwl	%ax, %eax
 	cmpq	%rax, %rdx
-	jae	.L150
-	.loc 1 615 0
+	jae	.L152
+	.loc 1 622 0
 	movq	-48(%rbp), %rax
 	movzwl	(%rax), %eax
 	movzwl	%ax, %edx
@@ -2882,9 +2914,9 @@ nbb_insert_item:
 	movzwl	%ax, %eax
 	leal	(%rdx,%rax), %eax
 	movl	%eax, -24(%rbp)
-	jmp	.L149
-.L150:
-	.loc 1 620 0
+	jmp	.L151
+.L152:
+	.loc 1 627 0
 	movq	-32(%rbp), %rax
 	movzwl	2(%rax), %eax
 	shrw	%ax
@@ -2895,45 +2927,45 @@ nbb_insert_item:
 	movzwl	14(%rax,%rdx,4), %eax
 	movzwl	%ax, %eax
 	cmpq	-72(%rbp), %rax
-	jbe	.L151
-	.loc 1 621 0
+	jbe	.L153
+	.loc 1 628 0
 	movl	$0, -24(%rbp)
-	jmp	.L149
-.L151:
-	.loc 1 625 0
-	leaq	.LC47(%rip), %rdi
+	jmp	.L151
+.L153:
+	.loc 1 632 0
+	leaq	.LC49(%rip), %rdi
 	call	puts@PLT
-	.loc 1 627 0
+	.loc 1 634 0
 	movq	-32(%rbp), %rax
 	movzwl	12(%rax), %eax
-	.loc 1 626 0
+	.loc 1 633 0
 	movzwl	%ax, %esi
-	.loc 1 627 0
+	.loc 1 634 0
 	movq	-48(%rbp), %rax
 	movzwl	2(%rax), %eax
-	.loc 1 626 0
+	.loc 1 633 0
 	movzwl	%ax, %edx
 	movq	-48(%rbp), %rax
 	movzwl	(%rax), %eax
 	movzwl	%ax, %ebx
-	leaq	.LC48(%rip), %rax
+	leaq	.LC50(%rip), %rax
 	movq	-72(%rbp), %rcx
 	movl	%esi, %r8d
 	movl	%ebx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
 	call	printf@PLT
-	.loc 1 628 0
+	.loc 1 635 0
 	movl	$1, %eax
-	jmp	.L146
-.L149:
-	.loc 1 632 0
+	jmp	.L148
+.L151:
+	.loc 1 639 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	leal	1(%rax), %edx
 	movq	-32(%rbp), %rax
 	movw	%dx, 4(%rax)
-	.loc 1 635 0
+	.loc 1 642 0
 	movl	-24(%rbp), %eax
 	cltq
 	addq	-40(%rbp), %rax
@@ -2942,7 +2974,7 @@ nbb_insert_item:
 	movq	%rcx, %rsi
 	movq	%rax, %rdi
 	call	memcpy@PLT
-	.loc 1 638 0
+	.loc 1 645 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	shrw	%ax
@@ -2953,7 +2985,7 @@ nbb_insert_item:
 	movq	-32(%rbp), %rax
 	movslq	%edx,%rdx
 	movw	%cx, 14(%rax,%rdx,4)
-	.loc 1 639 0
+	.loc 1 646 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	shrw	%ax
@@ -2964,26 +2996,26 @@ nbb_insert_item:
 	movq	-32(%rbp), %rax
 	movslq	%edx,%rdx
 	movw	%cx, 16(%rax,%rdx,4)
-	.loc 1 642 0
+	.loc 1 649 0
 	movq	-32(%rbp), %rax
 	movzwl	6(%rax), %eax
 	leal	2(%rax), %edx
 	movq	-32(%rbp), %rax
 	movw	%dx, 4(%rax)
-	.loc 1 649 0
+	.loc 1 656 0
 	movq	-32(%rbp), %rax
 	movzwl	4(%rax), %edx
 	movq	-32(%rbp), %rax
 	movw	%dx, 6(%rax)
-	.loc 1 651 0
+	.loc 1 658 0
 	movq	-64(%rbp), %rax
 	movl	$8, %edx
 	movq	%rax, %rsi
 	leaq	.LC22(%rip), %rdi
 	call	memcmp@PLT
 	testl	%eax, %eax
-	je	.L152
-	.loc 1 652 0
+	je	.L154
+	.loc 1 659 0
 	movl	-52(%rbp), %esi
 	movl	-52(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
@@ -3013,11 +3045,11 @@ nbb_insert_item:
 	addq	%rbx, %rax
 	addq	$32, %rax
 	movl	%ecx, 12(%rax)
-.L152:
-	.loc 1 655 0
+.L154:
+	.loc 1 662 0
 	movl	$0, %eax
-.L146:
-	.loc 1 656 0
+.L148:
+	.loc 1 663 0
 	addq	$72, %rsp
 	popq	%rbx
 	leave
@@ -3027,17 +3059,17 @@ nbb_insert_item:
 	.size	nbb_insert_item, .-nbb_insert_item
 	.section	.rodata
 	.align 8
-.LC49:
+.LC51:
 	.string	"ptr_to_item != ((void *)0) && size != ((void *)0)"
 	.align 8
-.LC50:
+.LC52:
 	.string	"! nbb_read_item(): invalid channel_id %d\n"
 	.text
 .globl nbb_read_item
 	.type	nbb_read_item, @function
 nbb_read_item:
 .LFB18:
-	.loc 1 659 0
+	.loc 1 666 0
 	.cfi_startproc
 	pushq	%rbp
 .LCFI36:
@@ -3050,7 +3082,7 @@ nbb_read_item:
 	movl	%edi, -36(%rbp)
 	movq	%rsi, -48(%rbp)
 	movq	%rdx, -56(%rbp)
-	.loc 1 660 0
+	.loc 1 667 0
 	movl	-36(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -3062,7 +3094,7 @@ nbb_read_item:
 	salq	$3, %rax
 	movq	(%rax,%rcx), %rax
 	movq	%rax, -16(%rbp)
-	.loc 1 661 0
+	.loc 1 668 0
 	movl	-36(%rbp), %eax
 	movq	channel_list@GOTPCREL(%rip), %rcx
 	movslq	%eax,%rdx
@@ -3074,64 +3106,64 @@ nbb_read_item:
 	salq	$3, %rax
 	movq	8(%rax,%rcx), %rax
 	movq	%rax, -24(%rbp)
-	.loc 1 662 0
+	.loc 1 669 0
 	movq	-16(%rbp), %rax
 	movzwl	4(%rax), %eax
 	movw	%ax, -2(%rbp)
-	.loc 1 664 0
+	.loc 1 671 0
 	cmpl	$0, -36(%rbp)
-	js	.L155
+	js	.L157
 	cmpl	$14, -36(%rbp)
-	jle	.L156
-.L155:
-	leaq	__PRETTY_FUNCTION__.4180(%rip), %rcx
-	movl	$664, %edx
-	leaq	.LC0(%rip), %rsi
-	leaq	.LC45(%rip), %rdi
-	call	__assert_fail@PLT
-.L156:
-	.loc 1 665 0
-	cmpq	$0, -48(%rbp)
-	je	.L157
-	cmpq	$0, -56(%rbp)
-	jne	.L158
+	jle	.L158
 .L157:
-	leaq	__PRETTY_FUNCTION__.4180(%rip), %rcx
-	movl	$665, %edx
+	leaq	__PRETTY_FUNCTION__.4191(%rip), %rcx
+	movl	$671, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC49(%rip), %rdi
+	leaq	.LC47(%rip), %rdi
 	call	__assert_fail@PLT
 .L158:
-	.loc 1 667 0
+	.loc 1 672 0
+	cmpq	$0, -48(%rbp)
+	je	.L159
+	cmpq	$0, -56(%rbp)
+	jne	.L160
+.L159:
+	leaq	__PRETTY_FUNCTION__.4191(%rip), %rcx
+	movl	$672, %edx
+	leaq	.LC0(%rip), %rsi
+	leaq	.LC51(%rip), %rdi
+	call	__assert_fail@PLT
+.L160:
+	.loc 1 674 0
 	movq	-48(%rbp), %rax
 	movq	$0, (%rax)
-	.loc 1 668 0
+	.loc 1 675 0
 	movq	-56(%rbp), %rax
 	movq	$0, (%rax)
-	.loc 1 670 0
+	.loc 1 677 0
 	cmpl	$0, -36(%rbp)
-	jns	.L159
-	.loc 1 671 0
-	leaq	.LC50(%rip), %rax
+	jns	.L161
+	.loc 1 678 0
+	leaq	.LC52(%rip), %rax
 	movl	-36(%rbp), %edx
 	movl	%edx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
 	call	printf@PLT
-	.loc 1 672 0
+	.loc 1 679 0
 	movl	$-1, %eax
-	jmp	.L160
-.L159:
-	.loc 1 680 0
+	jmp	.L162
+.L161:
+	.loc 1 687 0
 	movq	-16(%rbp), %rax
 	movzwl	2(%rax), %eax
 	cmpw	-2(%rbp), %ax
-	jne	.L161
-	.loc 1 681 0
+	jne	.L163
+	.loc 1 688 0
 	movl	$3, %eax
-	jmp	.L160
-.L161:
-	.loc 1 684 0
+	jmp	.L162
+.L163:
+	.loc 1 691 0
 	movzwl	-2(%rbp), %edx
 	movq	-16(%rbp), %rax
 	movzwl	2(%rax), %eax
@@ -3140,18 +3172,18 @@ nbb_read_item:
 	subl	%eax, %ecx
 	movl	%ecx, %eax
 	cmpl	$1, %eax
-	jne	.L162
-	.loc 1 685 0
+	jne	.L164
+	.loc 1 692 0
 	movl	$4, %eax
-	jmp	.L160
-.L162:
-	.loc 1 688 0
+	jmp	.L162
+.L164:
+	.loc 1 695 0
 	movq	-16(%rbp), %rax
 	movzwl	2(%rax), %eax
 	leal	1(%rax), %edx
 	movq	-16(%rbp), %rax
 	movw	%dx, (%rax)
-	.loc 1 692 0
+	.loc 1 699 0
 	movq	-16(%rbp), %rax
 	leaq	14(%rax), %rdx
 	movq	-16(%rbp), %rax
@@ -3162,7 +3194,7 @@ nbb_read_item:
 	salq	$2, %rax
 	leaq	(%rdx,%rax), %rax
 	movq	%rax, -32(%rbp)
-	.loc 1 693 0
+	.loc 1 700 0
 	movq	-32(%rbp), %rax
 	movzwl	2(%rax), %eax
 	movzwl	%ax, %eax
@@ -3171,7 +3203,7 @@ nbb_read_item:
 	movq	%rax, %rdx
 	movq	-48(%rbp), %rax
 	movq	%rdx, (%rax)
-	.loc 1 694 0
+	.loc 1 701 0
 	movq	-32(%rbp), %rax
 	movzwl	2(%rax), %eax
 	movzwl	%ax, %edx
@@ -3185,68 +3217,68 @@ nbb_read_item:
 	movq	%rcx, %rsi
 	movq	%rax, %rdi
 	call	memcpy@PLT
-	.loc 1 695 0
+	.loc 1 702 0
 	movq	-32(%rbp), %rax
 	movzwl	2(%rax), %eax
 	movzwl	%ax, %edx
 	movq	-56(%rbp), %rax
 	movq	%rdx, (%rax)
-	.loc 1 699 0
+	.loc 1 706 0
 	movq	-16(%rbp), %rax
 	movzwl	2(%rax), %eax
 	leal	2(%rax), %edx
 	movq	-16(%rbp), %rax
 	movw	%dx, (%rax)
-	.loc 1 700 0
+	.loc 1 707 0
 	movq	-16(%rbp), %rax
 	movzwl	(%rax), %edx
 	movq	-16(%rbp), %rax
 	movw	%dx, 2(%rax)
-	.loc 1 702 0
+	.loc 1 709 0
 	movl	$0, %eax
-.L160:
-	.loc 1 703 0
+.L162:
+	.loc 1 710 0
 	leave
 	ret
 	.cfi_endproc
 .LFE18:
 	.size	nbb_read_item, .-nbb_read_item
 	.section	.rodata
-	.type	__PRETTY_FUNCTION__.4180, @object
-	.size	__PRETTY_FUNCTION__.4180, 14
-__PRETTY_FUNCTION__.4180:
+	.type	__PRETTY_FUNCTION__.4191, @object
+	.size	__PRETTY_FUNCTION__.4191, 14
+__PRETTY_FUNCTION__.4191:
 	.string	"nbb_read_item"
 	.align 16
-	.type	__PRETTY_FUNCTION__.4069, @object
-	.size	__PRETTY_FUNCTION__.4069, 16
-__PRETTY_FUNCTION__.4069:
+	.type	__PRETTY_FUNCTION__.4080, @object
+	.size	__PRETTY_FUNCTION__.4080, 16
+__PRETTY_FUNCTION__.4080:
 	.string	"nbb_insert_item"
-	.type	__PRETTY_FUNCTION__.4031, @object
-	.size	__PRETTY_FUNCTION__.4031, 14
-__PRETTY_FUNCTION__.4031:
+	.type	__PRETTY_FUNCTION__.4042, @object
+	.size	__PRETTY_FUNCTION__.4042, 14
+__PRETTY_FUNCTION__.4042:
 	.string	"nbb_flush_shm"
 	.align 16
-	.type	__PRETTY_FUNCTION__.4020, @object
-	.size	__PRETTY_FUNCTION__.4020, 18
-__PRETTY_FUNCTION__.4020:
+	.type	__PRETTY_FUNCTION__.4031, @object
+	.size	__PRETTY_FUNCTION__.4031, 18
+__PRETTY_FUNCTION__.4031:
 	.string	"nbb_bytes_written"
-	.type	__PRETTY_FUNCTION__.4011, @object
-	.size	__PRETTY_FUNCTION__.4011, 15
-__PRETTY_FUNCTION__.4011:
+	.type	__PRETTY_FUNCTION__.4022, @object
+	.size	__PRETTY_FUNCTION__.4022, 15
+__PRETTY_FUNCTION__.4022:
 	.string	"nbb_bytes_read"
 	.align 16
-	.type	__PRETTY_FUNCTION__.4002, @object
-	.size	__PRETTY_FUNCTION__.4002, 20
-__PRETTY_FUNCTION__.4002:
+	.type	__PRETTY_FUNCTION__.4013, @object
+	.size	__PRETTY_FUNCTION__.4013, 20
+__PRETTY_FUNCTION__.4013:
 	.string	"nbb_bytes_available"
-	.type	__PRETTY_FUNCTION__.3954, @object
-	.size	__PRETTY_FUNCTION__.3954, 15
-__PRETTY_FUNCTION__.3954:
+	.type	__PRETTY_FUNCTION__.3965, @object
+	.size	__PRETTY_FUNCTION__.3965, 15
+__PRETTY_FUNCTION__.3965:
 	.string	"nbb_read_bytes"
 	.align 16
-	.type	__PRETTY_FUNCTION__.3918, @object
-	.size	__PRETTY_FUNCTION__.3918, 18
-__PRETTY_FUNCTION__.3918:
+	.type	__PRETTY_FUNCTION__.3929, @object
+	.size	__PRETTY_FUNCTION__.3929, 18
+__PRETTY_FUNCTION__.3929:
 	.string	"nbb_close_channel"
 	.align 16
 	.type	__PRETTY_FUNCTION__.3724, @object
@@ -3632,7 +3664,7 @@ __PRETTY_FUNCTION__.3488:
 	.file 7 "constants.h"
 	.file 8 "nbb.h"
 	.section	.debug_info
-	.long	0x1174
+	.long	0x1193
 	.value	0x2
 	.long	.Ldebug_abbrev0
 	.byte	0x8
@@ -4999,7 +5031,7 @@ __PRETTY_FUNCTION__.3488:
 	.quad	.LFB8
 	.quad	.LFE8
 	.long	.LLST8
-	.long	0xb73
+	.long	0xb92
 	.uleb128 0x24
 	.long	.LASF123
 	.byte	0x1
@@ -5052,6 +5084,17 @@ __PRETTY_FUNCTION__.3488:
 	.quad	.LBB4
 	.quad	.LBE4
 	.uleb128 0x25
+	.string	"z"
+	.byte	0x1
+	.value	0x16f
+	.long	0x62
+	.byte	0x2
+	.byte	0x91
+	.sleb128 -48
+	.uleb128 0x20
+	.quad	.LBB5
+	.quad	.LBE5
+	.uleb128 0x25
 	.string	"tmp"
 	.byte	0x1
 	.value	0x153
@@ -5061,21 +5104,22 @@ __PRETTY_FUNCTION__.3488:
 	.sleb128 -72
 	.byte	0x0
 	.byte	0x0
+	.byte	0x0
 	.uleb128 0x26
 	.byte	0x1
 	.long	.LASF125
 	.byte	0x1
-	.value	0x184
+	.value	0x18b
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB9
 	.quad	.LFE9
 	.long	.LLST9
-	.long	0xc04
+	.long	0xc23
 	.uleb128 0x24
 	.long	.LASF74
 	.byte	0x1
-	.value	0x184
+	.value	0x18b
 	.long	0x2ef
 	.byte	0x2
 	.byte	0x91
@@ -5083,7 +5127,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF126
 	.byte	0x1
-	.value	0x184
+	.value	0x18b
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5091,7 +5135,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF127
 	.byte	0x1
-	.value	0x184
+	.value	0x18b
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5099,7 +5143,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF128
 	.byte	0x1
-	.value	0x184
+	.value	0x18b
 	.long	0x62
 	.byte	0x3
 	.byte	0x91
@@ -5107,7 +5151,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF129
 	.byte	0x1
-	.value	0x186
+	.value	0x18d
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5115,7 +5159,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x25
 	.string	"shm"
 	.byte	0x1
-	.value	0x187
+	.value	0x18e
 	.long	0x550
 	.byte	0x2
 	.byte	0x91
@@ -5123,7 +5167,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF130
 	.byte	0x1
-	.value	0x188
+	.value	0x18f
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5133,52 +5177,52 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.long	.LASF131
 	.byte	0x1
-	.value	0x1cd
+	.value	0x1d4
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB10
 	.quad	.LFE10
 	.long	.LLST10
-	.long	0xc4e
+	.long	0xc6d
 	.uleb128 0x24
 	.long	.LASF132
 	.byte	0x1
-	.value	0x1cd
+	.value	0x1d4
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -20
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xc5e
+	.long	0xc7d
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.3918
+	.quad	__PRETTY_FUNCTION__.3929
 	.byte	0x0
 	.uleb128 0xa
 	.long	0x91
-	.long	0xc5e
+	.long	0xc7d
 	.uleb128 0xb
 	.long	0x86
 	.byte	0x11
 	.byte	0x0
 	.uleb128 0xe
-	.long	0xc4e
+	.long	0xc6d
 	.uleb128 0x29
 	.byte	0x1
 	.long	.LASF133
 	.byte	0x1
-	.value	0x1e1
+	.value	0x1e8
 	.long	0x62
 	.quad	.LFB11
 	.quad	.LFE11
 	.long	.LLST11
-	.long	0xc96
+	.long	0xcb5
 	.uleb128 0x25
 	.string	"i"
 	.byte	0x1
-	.value	0x1e3
+	.value	0x1ea
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5188,17 +5232,17 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.long	.LASF134
 	.byte	0x1
-	.value	0x1f1
+	.value	0x1f8
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB12
 	.quad	.LFE12
 	.long	.LLST12
-	.long	0xd1d
+	.long	0xd3c
 	.uleb128 0x24
 	.long	.LASF110
 	.byte	0x1
-	.value	0x1f1
+	.value	0x1f8
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5206,7 +5250,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x27
 	.string	"buf"
 	.byte	0x1
-	.value	0x1f1
+	.value	0x1f8
 	.long	0x8b
 	.byte	0x2
 	.byte	0x91
@@ -5214,30 +5258,30 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF89
 	.byte	0x1
-	.value	0x1f1
+	.value	0x1f8
 	.long	0x62
 	.byte	0x3
 	.byte	0x91
 	.sleb128 -68
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xd2d
+	.long	0xd4c
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.3954
+	.quad	__PRETTY_FUNCTION__.3965
 	.uleb128 0x28
 	.long	.LASF90
 	.byte	0x1
-	.value	0x1f5
-	.long	0xd32
+	.value	0x1fc
+	.long	0xd51
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -48
 	.uleb128 0x28
 	.long	.LASF135
 	.byte	0x1
-	.value	0x20b
+	.value	0x212
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5245,13 +5289,13 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x0
 	.uleb128 0xa
 	.long	0x91
-	.long	0xd2d
+	.long	0xd4c
 	.uleb128 0xb
 	.long	0x86
 	.byte	0xe
 	.byte	0x0
 	.uleb128 0xe
-	.long	0xd1d
+	.long	0xd3c
 	.uleb128 0x7
 	.byte	0x8
 	.long	0x5d4
@@ -5259,28 +5303,28 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.long	.LASF136
 	.byte	0x1
-	.value	0x214
+	.value	0x21b
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB13
 	.quad	.LFE13
 	.long	.LLST13
-	.long	0xd82
+	.long	0xda1
 	.uleb128 0x24
 	.long	.LASF110
 	.byte	0x1
-	.value	0x214
+	.value	0x21b
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -20
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xd82
+	.long	0xda1
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4002
+	.quad	__PRETTY_FUNCTION__.4013
 	.byte	0x0
 	.uleb128 0xe
 	.long	0x2df
@@ -5288,74 +5332,74 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.long	.LASF137
 	.byte	0x1
-	.value	0x21b
+	.value	0x222
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB14
 	.quad	.LFE14
 	.long	.LLST14
-	.long	0xdd1
+	.long	0xdf0
 	.uleb128 0x24
 	.long	.LASF110
 	.byte	0x1
-	.value	0x21b
+	.value	0x222
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -20
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xdd1
+	.long	0xdf0
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4011
+	.quad	__PRETTY_FUNCTION__.4022
 	.byte	0x0
 	.uleb128 0xe
-	.long	0xd1d
+	.long	0xd3c
 	.uleb128 0x26
 	.byte	0x1
 	.long	.LASF138
 	.byte	0x1
-	.value	0x221
+	.value	0x228
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB15
 	.quad	.LFE15
 	.long	.LLST15
-	.long	0xe20
+	.long	0xe3f
 	.uleb128 0x24
 	.long	.LASF110
 	.byte	0x1
-	.value	0x221
+	.value	0x228
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -20
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xe20
+	.long	0xe3f
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4020
+	.quad	__PRETTY_FUNCTION__.4031
 	.byte	0x0
 	.uleb128 0xe
-	.long	0xc4e
+	.long	0xc6d
 	.uleb128 0x23
 	.byte	0x1
 	.long	.LASF139
 	.byte	0x1
-	.value	0x227
+	.value	0x22e
 	.byte	0x1
 	.quad	.LFB16
 	.quad	.LFE16
 	.long	.LLST16
-	.long	0xea7
+	.long	0xec6
 	.uleb128 0x24
 	.long	.LASF110
 	.byte	0x1
-	.value	0x227
+	.value	0x22e
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5363,7 +5407,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF140
 	.byte	0x1
-	.value	0x227
+	.value	0x22e
 	.long	0x8b
 	.byte	0x2
 	.byte	0x91
@@ -5371,30 +5415,30 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF89
 	.byte	0x1
-	.value	0x227
+	.value	0x22e
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -52
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xeb7
+	.long	0xed6
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4031
+	.quad	__PRETTY_FUNCTION__.4042
 	.uleb128 0x28
 	.long	.LASF78
 	.byte	0x1
-	.value	0x22f
-	.long	0xd32
+	.value	0x236
+	.long	0xd51
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -32
 	.uleb128 0x28
 	.long	.LASF141
 	.byte	0x1
-	.value	0x230
+	.value	0x237
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5402,28 +5446,28 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x0
 	.uleb128 0xa
 	.long	0x91
-	.long	0xeb7
+	.long	0xed6
 	.uleb128 0xb
 	.long	0x86
 	.byte	0xd
 	.byte	0x0
 	.uleb128 0xe
-	.long	0xea7
+	.long	0xec6
 	.uleb128 0x26
 	.byte	0x1
 	.long	.LASF142
 	.byte	0x1
-	.value	0x244
+	.value	0x24b
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB17
 	.quad	.LFE17
 	.long	.LLST17
-	.long	0xf72
+	.long	0xf91
 	.uleb128 0x24
 	.long	.LASF111
 	.byte	0x1
-	.value	0x244
+	.value	0x24b
 	.long	0x62
 	.byte	0x3
 	.byte	0x91
@@ -5431,7 +5475,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF143
 	.byte	0x1
-	.value	0x244
+	.value	0x24b
 	.long	0x2fa
 	.byte	0x3
 	.byte	0x91
@@ -5439,22 +5483,22 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF89
 	.byte	0x1
-	.value	0x244
+	.value	0x24b
 	.long	0x2d
 	.byte	0x3
 	.byte	0x91
 	.sleb128 -88
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0xf72
+	.long	0xf91
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4069
+	.quad	__PRETTY_FUNCTION__.4080
 	.uleb128 0x25
 	.string	"buf"
 	.byte	0x1
-	.value	0x249
+	.value	0x250
 	.long	0x54a
 	.byte	0x2
 	.byte	0x91
@@ -5462,7 +5506,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF144
 	.byte	0x1
-	.value	0x24a
+	.value	0x251
 	.long	0x550
 	.byte	0x2
 	.byte	0x91
@@ -5470,7 +5514,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF145
 	.byte	0x1
-	.value	0x24c
+	.value	0x253
 	.long	0x46
 	.byte	0x2
 	.byte	0x91
@@ -5478,15 +5522,15 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF146
 	.byte	0x1
-	.value	0x25e
-	.long	0xf77
+	.value	0x265
+	.long	0xf96
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -64
 	.uleb128 0x28
 	.long	.LASF147
 	.byte	0x1
-	.value	0x261
+	.value	0x268
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5501,17 +5545,17 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.long	.LASF148
 	.byte	0x1
-	.value	0x292
+	.value	0x299
 	.byte	0x1
 	.long	0x62
 	.quad	.LFB18
 	.quad	.LFE18
 	.long	.LLST18
-	.long	0x1022
+	.long	0x1041
 	.uleb128 0x24
 	.long	.LASF111
 	.byte	0x1
-	.value	0x292
+	.value	0x299
 	.long	0x62
 	.byte	0x2
 	.byte	0x91
@@ -5519,23 +5563,23 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x24
 	.long	.LASF143
 	.byte	0x1
-	.value	0x292
-	.long	0x1022
+	.value	0x299
+	.long	0x1041
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -64
 	.uleb128 0x24
 	.long	.LASF89
 	.byte	0x1
-	.value	0x292
-	.long	0x1028
+	.value	0x299
+	.long	0x1047
 	.byte	0x3
 	.byte	0x91
 	.sleb128 -72
 	.uleb128 0x25
 	.string	"buf"
 	.byte	0x1
-	.value	0x294
+	.value	0x29b
 	.long	0x54a
 	.byte	0x2
 	.byte	0x91
@@ -5543,7 +5587,7 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF144
 	.byte	0x1
-	.value	0x295
+	.value	0x29c
 	.long	0x550
 	.byte	0x2
 	.byte	0x91
@@ -5551,23 +5595,23 @@ __PRETTY_FUNCTION__.3488:
 	.uleb128 0x28
 	.long	.LASF149
 	.byte	0x1
-	.value	0x296
+	.value	0x29d
 	.long	0x46
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -18
 	.uleb128 0x1d
 	.long	.LASF105
-	.long	0x102e
+	.long	0x104d
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4180
+	.quad	__PRETTY_FUNCTION__.4191
 	.uleb128 0x25
 	.string	"tmp"
 	.byte	0x1
-	.value	0x2b3
-	.long	0xf77
+	.value	0x2ba
+	.long	0xf96
 	.byte	0x2
 	.byte	0x91
 	.sleb128 -48
@@ -5579,12 +5623,12 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x8
 	.long	0x2d
 	.uleb128 0xe
-	.long	0xea7
+	.long	0xec6
 	.uleb128 0x1c
 	.long	.LASF150
 	.byte	0x7
 	.byte	0x1a
-	.long	0x1048
+	.long	0x1067
 	.byte	0x9
 	.byte	0x3
 	.quad	NAMESERVER_PID_FILE
@@ -5594,7 +5638,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF151
 	.byte	0x7
 	.byte	0x1b
-	.long	0x1062
+	.long	0x1081
 	.byte	0x9
 	.byte	0x3
 	.quad	NAMESERVER_CHANNEL_FULL
@@ -5604,7 +5648,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF152
 	.byte	0x7
 	.byte	0x1c
-	.long	0x107c
+	.long	0x109b
 	.byte	0x9
 	.byte	0x3
 	.quad	UNKNOWN_SERVICE
@@ -5614,7 +5658,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF153
 	.byte	0x7
 	.byte	0x1d
-	.long	0x1096
+	.long	0x10b5
 	.byte	0x9
 	.byte	0x3
 	.quad	SERVICE_BUSY
@@ -5624,7 +5668,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF154
 	.byte	0x7
 	.byte	0x1f
-	.long	0x10b0
+	.long	0x10cf
 	.byte	0x9
 	.byte	0x3
 	.quad	SERVICE
@@ -5634,7 +5678,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF155
 	.byte	0x7
 	.byte	0x20
-	.long	0x10ca
+	.long	0x10e9
 	.byte	0x9
 	.byte	0x3
 	.quad	CLIENT
@@ -5644,7 +5688,7 @@ __PRETTY_FUNCTION__.3488:
 	.string	"GUI"
 	.byte	0x7
 	.byte	0x21
-	.long	0x10e4
+	.long	0x1103
 	.byte	0x9
 	.byte	0x3
 	.quad	GUI
@@ -5652,7 +5696,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	0x26f
 	.uleb128 0xa
 	.long	0x409
-	.long	0x10f9
+	.long	0x1118
 	.uleb128 0xb
 	.long	0x86
 	.byte	0xe
@@ -5661,14 +5705,14 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF156
 	.byte	0x1
 	.byte	0x5
-	.long	0x10e9
+	.long	0x1108
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
 	.quad	channel_list
 	.uleb128 0xa
 	.long	0x3e0
-	.long	0x111f
+	.long	0x113e
 	.uleb128 0xb
 	.long	0x86
 	.byte	0xe
@@ -5677,14 +5721,14 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF157
 	.byte	0x1
 	.byte	0x6
-	.long	0x110f
+	.long	0x112e
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
 	.quad	connected_nodes
 	.uleb128 0xa
 	.long	0x5d4
-	.long	0x1145
+	.long	0x1164
 	.uleb128 0xb
 	.long	0x86
 	.byte	0xe
@@ -5693,7 +5737,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF158
 	.byte	0x1
 	.byte	0x7
-	.long	0x1135
+	.long	0x1154
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
@@ -5702,7 +5746,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	.LASF159
 	.byte	0x1
 	.byte	0x9
-	.long	0x1171
+	.long	0x1190
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
@@ -6295,7 +6339,7 @@ __PRETTY_FUNCTION__.3488:
 	.long	0x1e6
 	.value	0x2
 	.long	.Ldebug_info0
-	.long	0x1178
+	.long	0x1197
 	.long	0x5df
 	.string	"nbb_nameserver_connect"
 	.long	0x6b1
@@ -6314,33 +6358,33 @@ __PRETTY_FUNCTION__.3488:
 	.string	"nbb_send"
 	.long	0xad5
 	.string	"nbb_recv_data"
-	.long	0xb73
+	.long	0xb92
 	.string	"nbb_open_channel"
-	.long	0xc04
+	.long	0xc23
 	.string	"nbb_close_channel"
-	.long	0xc63
+	.long	0xc82
 	.string	"nbb_free_channel_slot"
-	.long	0xc96
+	.long	0xcb5
 	.string	"nbb_read_bytes"
-	.long	0xd38
+	.long	0xd57
 	.string	"nbb_bytes_available"
-	.long	0xd87
+	.long	0xda6
 	.string	"nbb_bytes_read"
-	.long	0xdd6
+	.long	0xdf5
 	.string	"nbb_bytes_written"
-	.long	0xe25
+	.long	0xe44
 	.string	"nbb_flush_shm"
-	.long	0xebc
+	.long	0xedb
 	.string	"nbb_insert_item"
-	.long	0xf7d
+	.long	0xf9c
 	.string	"nbb_read_item"
-	.long	0x10f9
+	.long	0x1118
 	.string	"channel_list"
-	.long	0x111f
+	.long	0x113e
 	.string	"connected_nodes"
-	.long	0x1145
+	.long	0x1164
 	.string	"delay_buffers"
-	.long	0x115b
+	.long	0x117a
 	.string	"sem_id"
 	.long	0x0
 	.section	.debug_aranges,"",@progbits

@@ -362,8 +362,15 @@ void nbb_recv_data(int signum)
         channel_list[i].new_data(i);
       }
 
-      printf("** Received '%.*s' from shm id %d slot %d\n",
-             (int) recv_len, recv, channel_list[i].read_id, i);
+      printf("** Received %zu bytes: ", recv_len);
+
+      int z;
+      for(z=0; z<recv_len; z++) {
+        printf("%02x", recv[z]);
+      }
+              
+      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
+
 
       if (!is_new_conn_msg) {
         nbb_flush_shm(i, recv, recv_len);
