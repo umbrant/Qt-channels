@@ -116,7 +116,7 @@ static void server_on_new_data(int slot_id)
     assert(slot_id >= 0);
 
     int n = nbb_bytes_available(slot_id);
-    char *buf = new buf[n];
+    char *buf = new char[n];
     int ret = nbb_read_bytes(slot_id, buf, n);
 
     printf("server_on_new_data: Got '%.*s' (%d bytes out of %d requested bytes)\n",
