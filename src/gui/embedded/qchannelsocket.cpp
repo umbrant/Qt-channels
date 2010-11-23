@@ -123,6 +123,7 @@ qint64 QChannelSocket::bytesAvailable() const
         return qint64(0);
     }
     qint64 avail =  nbb_bytes_available(slotNumber) + QIODevice::bytesAvailable();
+    printf("bytesAvailable: %d + %d = %d\n", nbb_bytes_available(slotNumber), QIODevice::bytesAvailable(), avail);
     return avail;
 }
 
@@ -148,6 +149,11 @@ qint64 QChannelSocket::readData(char * data, qint64 maxSize)
     printf("\n");
 
 	return bytes;
+}
+
+qint64 QChannelSocket::read(char * data, qint64 maxSize)
+{
+    return QChannelSocket::readData(data, maxSize);
 }
 
 /*! \internal */
