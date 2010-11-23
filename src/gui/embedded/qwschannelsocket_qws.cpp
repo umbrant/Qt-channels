@@ -107,6 +107,22 @@ static void server_on_new_connection(int slot_id, void *arg)
     serverSocket->incomingConnection(slot_id);
 }
 
+// Callback function to handle new connection.
+// It assumes that |arg| is the object pointer to which this channel slot
+// belongs.
+static void server_on_new_data(int slot_id)
+{
+    printf("server_on_new_data called for %d \n", slot_id);
+    assert(slot_id >= 0);
+
+    int n = nbb_bytes_available(slot_id);
+    char *buf = new buf[n];
+    int ret = nbb_read_bytes(slot_id, buf, n);
+
+    printf("server_on_new_data: Got '%.*s' (%d bytes out of %d requested bytes)\n",
+           ret, buf, ret, n);
+}
+
 /******************************************
   HELPER FUNCTION/DATA FOR QWSChannelSocket
  *******************************************/
@@ -266,6 +282,7 @@ void QWSChannelServerSocket::init(const QString &file)
     }
 
     ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
+    ::nbb_set_cb_new_data(service_name, server_on_new_data);
 
     cout << "QWSChannelServerSocket::init(): Successfully init-ed "
          << service_name << endl;
