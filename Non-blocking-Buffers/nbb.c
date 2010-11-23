@@ -275,6 +275,23 @@ void nbb_set_cb_new_data(const char* owner, cb_new_data_func func)
   }
 }
 
+void nbb_set_owner(int slot_id, const char *owner)
+{
+  assert(slot_id >= 0 && slot_id < SERVICE_MAX_CHANNELS && "Invalid slot id");
+  assert(owner != NULL && "Invalid owner");
+
+  if (channel_list[slot_id].owner != NULL) {
+    printf("***nbb_set_owner***: Old owner: '%s'\n", channel_list[slot_id].owner);
+    free(channel_list[slot_id].owner);
+  }
+
+  channel_list[slot_id].owner = (char *) malloc(sizeof(char) * (strlen(owner) + 1));
+  assert(channel_list[slot_id].owner != NULL && "malloc failed");
+
+  strcpy(channel_list[slot_id].owner, owner);
+  printf("***nbb_change_owner***: Changed owner for slot %d to '%s'\n", slot_id, owner);
+}
+
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
   printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);

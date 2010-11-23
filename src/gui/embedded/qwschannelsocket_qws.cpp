@@ -222,6 +222,9 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
 
     this->setSocketDescriptor(slot);
 
+    // Set ownership to this client socket
+    nbb_set_owner(slot, client_name);
+
     // Register for new incoming data event from nbb
     nbb_set_cb_new_data(client_name, client_on_new_available_data);
 
@@ -241,7 +244,9 @@ bool QWSChannelSocket::flush()
 bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode openMode)
 {
     assert(socketDescriptor >= 0);
-    printf("%s: old: %d new: %d \n", this->getSocketName(), this->socketDescriptor(), socketDescriptor);
+    const char *socketName = this->getSocketName();
+
+    printf("%s: old: %d new: %d \n", socketName, this->socketDescriptor(), socketDescriptor);
 
     QChannelSocket::setSocketDescriptor(socketDescriptor, socketState, openMode);
 
@@ -250,8 +255,11 @@ bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket
     // socket object.
     g_clientSocketMap[socketDescriptor] = this;
 
+    // (Possible change ownership from service to this client socket)
+    nbb_set_owner(socketDescriptor, socketName);
+
     // Register for new incoming data from nbb
-    nbb_set_cb_new_data(this->getSocketName(), client_on_new_available_data);
+    nbb_set_cb_new_data(socketName, client_on_new_available_data);
 
     return true;
 }
