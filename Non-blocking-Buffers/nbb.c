@@ -368,6 +368,18 @@ void nbb_recv_data(int signum)
         is_new_conn_msg = 1;
       }
 
+      if (!is_new_conn_msg) {
+        nbb_flush_shm(i, recv, recv_len);
+      }
+
+      printf("** Received %zu bytes: ", recv_len);
+      int z;
+      for(z=0; z<recv_len; z++) {
+        printf("%02x", recv[z]);
+      }
+      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
+
+
       // Notify of new connection on slot i
       if (is_new_conn_msg && channel_list[i].new_conn != NULL) {
         channel_list[i].new_conn(i, channel_list[i].arg);
@@ -379,19 +391,6 @@ void nbb_recv_data(int signum)
         channel_list[i].new_data(i);
       }
 
-      printf("** Received %zu bytes: ", recv_len);
-
-      int z;
-      for(z=0; z<recv_len; z++) {
-        printf("%02x", recv[z]);
-      }
-              
-      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
-
-
-      if (!is_new_conn_msg) {
-        nbb_flush_shm(i, recv, recv_len);
-      }
 
       // XXX: This is for debugging. Remove before production.
       // Reply message
