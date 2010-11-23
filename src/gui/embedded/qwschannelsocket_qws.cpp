@@ -107,7 +107,8 @@ static void server_on_new_connection(int slot_id, void *arg)
     serverSocket->incomingConnection(slot_id);
 }
 
-// Callback function to handle new connection.
+// XXX: Unused
+// Callback function to handle data for server socket
 // It assumes that |arg| is the object pointer to which this channel slot
 // belongs.
 static void server_on_new_data(int slot_id)
@@ -249,6 +250,9 @@ bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket
     // socket object.
     g_clientSocketMap[socketDescriptor] = this;
 
+    // Register for new incoming data from nbb
+    nbb_set_cb_new_data(this->getSocketName(), client_on_new_available_data);
+
     return true;
 }
 
@@ -283,7 +287,7 @@ void QWSChannelServerSocket::init(const QString &file)
     }
 
     ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
-    ::nbb_set_cb_new_data(service_name, server_on_new_data);
+    //::nbb_set_cb_new_data(service_name, server_on_new_data);
 
     cout << "QWSChannelServerSocket::init(): Successfully init-ed "
          << service_name << endl;
