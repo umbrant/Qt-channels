@@ -275,9 +275,26 @@ void nbb_set_cb_new_data(const char* owner, cb_new_data_func func)
   }
 }
 
+void nbb_set_owner(int slot_id, const char *owner)
+{
+  assert(slot_id >= 0 && slot_id < SERVICE_MAX_CHANNELS && "Invalid slot id");
+  assert(owner != NULL && "Invalid owner");
+
+  if (channel_list[slot_id].owner != NULL) {
+    printf("***nbb_set_owner***: Old owner: '%s'\n", channel_list[slot_id].owner);
+    free(channel_list[slot_id].owner);
+  }
+
+  channel_list[slot_id].owner = (char *) malloc(sizeof(char) * (strlen(owner) + 1));
+  assert(channel_list[slot_id].owner != NULL && "malloc failed");
+
+  strcpy(channel_list[slot_id].owner, owner);
+  printf("***nbb_change_owner***: Changed owner for slot %d to '%s'\n", slot_id, owner);
+}
+
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  printf("** slot: %d, msg: %s, msg_len: %d\n", slot_id, msg, (int) msg_len);
+  printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
   assert(msg != NULL);
 
   if (msg_len == 0) {
@@ -290,7 +307,7 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
   nbb_insert_item(slot_id, msg, msg_len); 
   kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
 
-  printf("** Send '%.*s' to slot %d\n", (int) msg_len, msg, slot_id);
+  printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
 
   return 0;
 
@@ -316,10 +333,6 @@ int nbb_send(const char* destination, const char* msg, size_t msg_len)
 /* Called when the service gets new client data */
 void nbb_recv_data(int signum)
 {
-  signal(signum, nbb_recv_data);
-  return;
-
-#if 0
   int i;
   char* recv;
   size_t recv_len = 0;
@@ -328,7 +341,7 @@ void nbb_recv_data(int signum)
   int is_new_conn_msg = 0;
 
   // Attempt to debug Qt. XXX: Remove when done.
-  //printf("***NBB***: Inside signal handler\n");
+  printf("***NBB***: Inside signal handler\n");
 
 
   // Since i = 0 is already reserved for nameserver
@@ -366,8 +379,15 @@ void nbb_recv_data(int signum)
         channel_list[i].new_data(i);
       }
 
-      printf("** Received '%.*s' from shm id %d\n",
-             (int) recv_len, recv, channel_list[i].read_id);
+      printf("** Received %zu bytes: ", recv_len);
+
+      int z;
+      for(z=0; z<recv_len; z++) {
+        printf("%02x", recv[z]);
+      }
+              
+      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
+
 
       if (!is_new_conn_msg) {
         nbb_flush_shm(i, recv, recv_len);
@@ -387,7 +407,6 @@ void nbb_recv_data(int signum)
   }
 
   signal(NBB_SIGNAL, nbb_recv_data);
-#endif
 }
 
 int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int is_ipc_create)

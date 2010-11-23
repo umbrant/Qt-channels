@@ -109,6 +109,7 @@ const char *QChannelSocket::getSocketName(void)
  */
 void QChannelSocket::emitReadyRead()
 {
+    printf("'%s' emitting readyRead signal\n", getSocketName());
     emit readyRead();
 }
 
@@ -122,6 +123,7 @@ qint64 QChannelSocket::bytesAvailable() const
         return qint64(0);
     }
     qint64 avail =  nbb_bytes_available(slotNumber) + QIODevice::bytesAvailable();
+    printf("bytesAvailable: %d + %d = %d\n", nbb_bytes_available(slotNumber), QIODevice::bytesAvailable(), avail);
     return avail;
 }
 
@@ -138,14 +140,32 @@ qint64 QChannelSocket::bytesToWrite() const
 qint64 QChannelSocket::readData(char * data, qint64 maxSize)
 {
 	qint64 bytes = nbb_read_bytes(slotNumber, data, maxSize);
-    printf("readData (%p): %.*s\n", this, bytes, data);
+
+    printf("readData (%p) (bytes: %d): ", this, bytes);
+    int i;
+    for(i=0; i<bytes; i++) {
+        printf("%02x ", data[i]);
+    }
+    printf("\n");
+
 	return bytes;
+}
+
+qint64 QChannelSocket::read(char * data, qint64 maxSize)
+{
+    return QChannelSocket::readData(data, maxSize);
 }
 
 /*! \internal */
 qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
 {
-    printf("writeData (%p): %.*s\n", this, maxSize, data);
+    printf("writeData (%p) (bytes: %d): ", this, maxSize);
+    int i;
+    for(i=0; i<maxSize; i++) {
+        printf("%02x ", data[i]);
+    }
+    printf("\n");
+
     int ret = nbb_write_bytes(slotNumber, data, maxSize);
 	if(ret) {
 	    printf("WRITE ERROR! slotnumber %d \n", slotNumber);

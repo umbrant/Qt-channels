@@ -66,7 +66,7 @@ embedded {
             embedded/qwschannelsocket_qws.cpp \
 		    embedded/qchannelsocket.cpp \
 			embedded/qsoundqss_qws.cpp \
-		    embedded/nbb.c
+		    embedded/nbb.s
 
         contains(QT_CONFIG,sxe)|contains(QT_CONFIG,qtopia) {
             SOURCES += embedded/qunixsocket.cpp embedded/qunixsocketserver.cpp

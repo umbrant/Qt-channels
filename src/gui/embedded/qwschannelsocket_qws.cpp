@@ -107,6 +107,24 @@ static void server_on_new_connection(int slot_id, void *arg)
     serverSocket->incomingConnection(slot_id);
 }
 
+// XXX: Unused
+// Callback function to handle data for server socket
+// It assumes that |arg| is the object pointer to which this channel slot
+// belongs.
+static void server_on_new_data(int slot_id)
+{
+    printf("server_on_new_data called for %d \n", slot_id);
+    assert(slot_id >= 0);
+
+    int n = nbb_bytes_available(slot_id);
+    char *buf = new char[n];
+    int ret = nbb_read_bytes(slot_id, buf, n);
+
+    printf("server_on_new_data: Got '%.*s' (%d bytes out of %d requested bytes)\n",
+           ret, buf, ret, n);
+    delete [] buf;
+}
+
 /******************************************
   HELPER FUNCTION/DATA FOR QWSChannelSocket
  *******************************************/
@@ -204,6 +222,9 @@ bool QWSChannelSocket::connectToLocalFile(const QString &file)
 
     this->setSocketDescriptor(slot);
 
+    // Set ownership to this client socket
+    nbb_set_owner(slot, client_name);
+
     // Register for new incoming data event from nbb
     nbb_set_cb_new_data(client_name, client_on_new_available_data);
 
@@ -223,7 +244,9 @@ bool QWSChannelSocket::flush()
 bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket::SocketState socketState, QAbstractSocket::OpenMode openMode)
 {
     assert(socketDescriptor >= 0);
-    printf("%s: old: %d new: %d \n", this->getSocketName(), this->socketDescriptor(), socketDescriptor);
+    const char *socketName = this->getSocketName();
+
+    printf("%s: old: %d new: %d \n", socketName, this->socketDescriptor(), socketDescriptor);
 
     QChannelSocket::setSocketDescriptor(socketDescriptor, socketState, openMode);
 
@@ -231,6 +254,12 @@ bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket
     // function (which has slot ID as argument), we can identify the client
     // socket object.
     g_clientSocketMap[socketDescriptor] = this;
+
+    // (Possible change ownership from service to this client socket)
+    nbb_set_owner(socketDescriptor, socketName);
+
+    // Register for new incoming data from nbb
+    nbb_set_cb_new_data(socketName, client_on_new_available_data);
 
     return true;
 }
@@ -266,6 +295,7 @@ void QWSChannelServerSocket::init(const QString &file)
     }
 
     ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
+    //::nbb_set_cb_new_data(service_name, server_on_new_data);
 
     cout << "QWSChannelServerSocket::init(): Successfully init-ed "
          << service_name << endl;
@@ -289,6 +319,7 @@ QWSChannelSocket *QWSChannelServerSocket::nextPendingConnection()
     if ( inboundConnections.count() == 0 )
         return 0;
     QWSChannelSocket *s = new QWSChannelSocket();
+    printf("** nextPendingConnection()\n");
     s->setSocketDescriptor( inboundConnections.takeFirst() );
     return s;
 }

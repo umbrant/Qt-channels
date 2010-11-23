@@ -953,6 +953,7 @@ void QWSDisplay::Data::init()
 QWSEvent* QWSDisplay::Data::readMore()
 {
 #ifdef QT_NO_QWS_MULTIPROCESS
+    assert(0);
     return incoming.isEmpty() ? 0 : incoming.takeFirst();
 #else
     if (!csocket)
@@ -989,6 +990,7 @@ void QWSDisplay::Data::fillQueue()
     int bytesRead = 0;
 #endif
     while (e) {
+        printf("fillQueue while loop\n");
 #ifndef QT_NO_QWS_MULTIPROCESS
         bytesRead += QWS_PROTOCOL_ITEM_SIZE((*e));
 #endif
@@ -1124,10 +1126,13 @@ void QWSDisplay::Data::waitForConnection()
 
     for (int i = 0; i < qws_connection_timeout; i++) {
         fillQueue();
-        if (connected_event)
+        if (connected_event) {
+            printf("Got connected event :)\n");
             return;
+        }
         csocket->flush();
         csocket->waitForReadyRead(1000);
+        sleep(2);
     }
 
     csocket->flush();
