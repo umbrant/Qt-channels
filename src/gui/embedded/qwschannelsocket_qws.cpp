@@ -311,6 +311,7 @@ QWSChannelSocket *QWSChannelServerSocket::nextPendingConnection()
     if ( inboundConnections.count() == 0 )
         return 0;
     QWSChannelSocket *s = new QWSChannelSocket();
+    printf("** nextPendingConnection()\n");
     s->setSocketDescriptor( inboundConnections.takeFirst() );
     return s;
 }
