@@ -65,6 +65,9 @@ void nbb_set_cb_new_connection(const char* owner, cb_new_conn_func func, void* a
 typedef void (*cb_new_data_func)(int slot_id);
 void nbb_set_cb_new_data(const char* owner, cb_new_data_func func);
 
+// Allow process to change owner for channel slot
+void nbb_set_owner(int slot_id, const char *owner);
+
 struct connected_node {
   char* name;
   int pid;
