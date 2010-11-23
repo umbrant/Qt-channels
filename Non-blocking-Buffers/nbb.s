@@ -1152,7 +1152,7 @@ nbb_set_cb_new_data:
 	.section	.rodata
 	.align 8
 .LC27:
-	.string	"** slot: %d, msg: %s, msg_len: %d\n"
+	.string	"** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n"
 .LC28:
 	.string	"msg != ((void *)0)"
 	.align 8
@@ -1161,8 +1161,9 @@ nbb_set_cb_new_data:
 	.align 8
 .LC30:
 	.string	"slot_id >= 0 && slot_id < 15 && \"Process not found\""
+	.align 8
 .LC31:
-	.string	"** Send '%.*s' to slot %d\n"
+	.string	"** nbb_write_bytes() Sent kill to %d\n"
 	.text
 .globl nbb_write_bytes
 	.type	nbb_write_bytes, @function
@@ -1185,10 +1186,36 @@ nbb_write_bytes:
 	.loc 1 280 0
 	movq	-40(%rbp), %rax
 	movl	%eax, %ecx
+	movl	-20(%rbp), %eax
+	movq	channel_list@GOTPCREL(%rip), %rbx
+	.cfi_offset 3, -24
+	movslq	%eax,%rdx
+	movq	%rdx, %rax
+	salq	$2, %rax
+	addq	%rdx, %rax
+	addq	%rax, %rax
+	addq	%rdx, %rax
+	salq	$3, %rax
+	addq	%rbx, %rax
+	addq	$32, %rax
+	movl	8(%rax), %esi
+	movl	-20(%rbp), %eax
+	movq	channel_list@GOTPCREL(%rip), %rbx
+	movslq	%eax,%rdx
+	movq	%rdx, %rax
+	salq	$2, %rax
+	addq	%rdx, %rax
+	addq	%rax, %rax
+	addq	%rdx, %rax
+	salq	$3, %rax
+	addq	%rbx, %rax
+	addq	$16, %rax
+	movl	(%rax), %ebx
 	leaq	.LC27(%rip), %rax
 	movq	-32(%rbp), %rdx
-	movl	-20(%rbp), %ebx
-	.cfi_offset 3, -24
+	movl	%ecx, %r8d
+	movq	%rdx, %rcx
+	movl	%esi, %edx
 	movl	%ebx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
@@ -1243,12 +1270,13 @@ nbb_write_bytes:
 	movl	%eax, %edi
 	call	kill@PLT
 	.loc 1 293 0
-	movq	-40(%rbp), %rax
-	movl	%eax, %ebx
+	movl	-20(%rbp), %edx
+	movq	connected_nodes@GOTPCREL(%rip), %rax
+	movslq	%edx,%rdx
+	salq	$4, %rdx
+	movl	8(%rdx,%rax), %edx
 	leaq	.LC31(%rip), %rax
-	movl	-20(%rbp), %ecx
-	movq	-32(%rbp), %rdx
-	movl	%ebx, %esi
+	movl	%edx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
 	call	printf@PLT
@@ -1346,10 +1374,13 @@ nbb_send:
 	.section	.rodata
 	.align 8
 .LC32:
-	.string	"***NBB***: New connection on slot %d from client_name: %s with pid: %d\n"
+	.string	"***NBB***: Inside signal handler"
 	.align 8
 .LC33:
-	.string	"** Received '%.*s' from shm id %d\n"
+	.string	"***NBB***: New connection on slot %d from client_name: %s with pid: %d\n"
+	.align 8
+.LC34:
+	.string	"** Received '%.*s' from shm id %d slot %d\n"
 	.text
 .globl nbb_recv_data
 	.type	nbb_recv_data, @function
@@ -1373,10 +1404,13 @@ nbb_recv_data:
 	movl	$-1, -24(%rbp)
 	.loc 1 324 0
 	movl	$0, -28(%rbp)
+	.loc 1 327 0
+	leaq	.LC32(%rip), %rdi
+	.cfi_offset 3, -24
+	call	puts@PLT
 	.loc 1 331 0
 	movl	$1, -20(%rbp)
 	jmp	.L70
-	.cfi_offset 3, -24
 .L77:
 	.loc 1 332 0
 	leaq	-40(%rbp), %rcx
@@ -1473,7 +1507,7 @@ nbb_recv_data:
 	movslq	%edx,%rdx
 	salq	$4, %rdx
 	movq	(%rdx,%rax), %rdx
-	leaq	.LC32(%rip), %rax
+	leaq	.LC33(%rip), %rax
 	movl	-20(%rbp), %ebx
 	movl	%ebx, %esi
 	movq	%rax, %rdi
@@ -1580,7 +1614,9 @@ nbb_recv_data:
 	movq	-40(%rbp), %rdx
 	movq	-48(%rbp), %rax
 	movl	%eax, %ebx
-	leaq	.LC33(%rip), %rax
+	leaq	.LC34(%rip), %rax
+	movl	-20(%rbp), %esi
+	movl	%esi, %r8d
 	movl	%ebx, %esi
 	movq	%rax, %rdi
 	movl	$0, %eax
@@ -1640,11 +1676,11 @@ nbb_recv_data:
 	.size	nbb_recv_data, .-nbb_recv_data
 	.section	.rodata
 	.align 8
-.LC34:
-	.string	"! nbb_open_channel(): no free_slot"
 .LC35:
-	.string	"shmget"
+	.string	"! nbb_open_channel(): no free_slot"
 .LC36:
+	.string	"shmget"
+.LC37:
 	.string	"shmat"
 	.text
 .globl nbb_open_channel
@@ -1688,7 +1724,7 @@ nbb_open_channel:
 	cmpl	$-1, -24(%rbp)
 	jne	.L82
 	.loc 1 402 0
-	leaq	.LC34(%rip), %rdi
+	leaq	.LC35(%rip), %rdi
 	call	puts@PLT
 	.loc 1 403 0
 	movl	$-1, %eax
@@ -1706,7 +1742,7 @@ nbb_open_channel:
 	cmpl	$0, -20(%rbp)
 	jns	.L84
 	.loc 1 411 0
-	leaq	.LC35(%rip), %rdi
+	leaq	.LC36(%rip), %rdi
 	call	perror@PLT
 	.loc 1 412 0
 	movl	$-1, %eax
@@ -1722,7 +1758,7 @@ nbb_open_channel:
 	cmpq	$-1, -32(%rbp)
 	jne	.L85
 	.loc 1 415 0
-	leaq	.LC36(%rip), %rdi
+	leaq	.LC37(%rip), %rdi
 	call	perror@PLT
 	.loc 1 416 0
 	movl	$-1, %eax
@@ -1826,7 +1862,7 @@ nbb_open_channel:
 	cmpl	$0, -20(%rbp)
 	jns	.L86
 	.loc 1 432 0
-	leaq	.LC35(%rip), %rdi
+	leaq	.LC36(%rip), %rdi
 	call	perror@PLT
 	.loc 1 433 0
 	movl	$-1, %eax
@@ -1842,7 +1878,7 @@ nbb_open_channel:
 	cmpq	$-1, -32(%rbp)
 	jne	.L87
 	.loc 1 436 0
-	leaq	.LC36(%rip), %rdi
+	leaq	.LC37(%rip), %rdi
 	call	perror@PLT
 	.loc 1 437 0
 	movl	$-1, %eax
@@ -2019,7 +2055,7 @@ nbb_open_channel:
 .LFE9:
 	.size	nbb_open_channel, .-nbb_open_channel
 	.section	.rodata
-.LC37:
+.LC38:
 	.string	"index >= 0 && index < 15"
 	.text
 .globl nbb_close_channel
@@ -2043,10 +2079,10 @@ nbb_close_channel:
 	cmpl	$14, -4(%rbp)
 	jle	.L92
 .L91:
-	leaq	__PRETTY_FUNCTION__.3913(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.3918(%rip), %rcx
 	movl	$465, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC37(%rip), %rdi
+	leaq	.LC38(%rip), %rdi
 	call	__assert_fail@PLT
 .L92:
 	.loc 1 467 0
@@ -2197,16 +2233,16 @@ nbb_free_channel_slot:
 	.size	nbb_free_channel_slot, .-nbb_free_channel_slot
 	.section	.rodata
 	.align 8
-.LC38:
+.LC39:
 	.string	"slot >= 0 && buf != ((void *)0) && size >= 0"
 	.align 8
-.LC39:
+.LC40:
 	.string	"***NBB***: Delay buffer %d: %d/%d\n"
 	.align 8
-.LC40:
+.LC41:
 	.string	"delay_buffer->capacity >= delay_buffer->len"
 	.align 8
-.LC41:
+.LC42:
 	.string	"delay_buffer->content != ((void *)0) && delay_buffer->len > 0"
 	.text
 .globl nbb_read_bytes
@@ -2236,10 +2272,10 @@ nbb_read_bytes:
 	cmpl	$0, -52(%rbp)
 	jns	.L105
 .L104:
-	leaq	__PRETTY_FUNCTION__.3949(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
 	movl	$499, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC38(%rip), %rdi
+	leaq	.LC39(%rip), %rdi
 	call	__assert_fail@PLT
 .L105:
 	.loc 1 501 0
@@ -2258,7 +2294,7 @@ nbb_read_bytes:
 	movl	12(%rax), %ecx
 	movq	-32(%rbp), %rax
 	movl	8(%rax), %edx
-	leaq	.LC39(%rip), %rax
+	leaq	.LC40(%rip), %rax
 	movl	-36(%rbp), %ebx
 	movl	%ebx, %esi
 	movq	%rax, %rdi
@@ -2271,10 +2307,10 @@ nbb_read_bytes:
 	movl	8(%rax), %eax
 	cmpl	%eax, %edx
 	jge	.L106
-	leaq	__PRETTY_FUNCTION__.3949(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
 	movl	$504, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC40(%rip), %rdi
+	leaq	.LC41(%rip), %rdi
 	call	__assert_fail@PLT
 .L106:
 	.loc 1 507 0
@@ -2303,10 +2339,10 @@ nbb_read_bytes:
 	testl	%eax, %eax
 	jg	.L111
 .L110:
-	leaq	__PRETTY_FUNCTION__.3949(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.3954(%rip), %rcx
 	movl	$511, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC41(%rip), %rdi
+	leaq	.LC42(%rip), %rdi
 	call	__assert_fail@PLT
 .L111:
 	.loc 1 514 0
@@ -2393,7 +2429,7 @@ nbb_read_bytes:
 .LFE12:
 	.size	nbb_read_bytes, .-nbb_read_bytes
 	.section	.rodata
-.LC42:
+.LC43:
 	.string	"slot >= 0 && slot < 15"
 	.text
 .globl nbb_bytes_available
@@ -2417,10 +2453,10 @@ nbb_bytes_available:
 	cmpl	$14, -4(%rbp)
 	jle	.L117
 .L116:
-	leaq	__PRETTY_FUNCTION__.3997(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4002(%rip), %rcx
 	movl	$535, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC42(%rip), %rdi
+	leaq	.LC43(%rip), %rdi
 	call	__assert_fail@PLT
 .L117:
 	.loc 1 536 0
@@ -2459,10 +2495,10 @@ nbb_bytes_read:
 	cmpl	$14, -4(%rbp)
 	jle	.L121
 .L120:
-	leaq	__PRETTY_FUNCTION__.4006(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4011(%rip), %rcx
 	movl	$541, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC42(%rip), %rdi
+	leaq	.LC43(%rip), %rdi
 	call	__assert_fail@PLT
 .L121:
 	.loc 1 542 0
@@ -2505,10 +2541,10 @@ nbb_bytes_written:
 	cmpl	$14, -4(%rbp)
 	jle	.L125
 .L124:
-	leaq	__PRETTY_FUNCTION__.4015(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4020(%rip), %rcx
 	movl	$547, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC42(%rip), %rdi
+	leaq	.LC43(%rip), %rdi
 	call	__assert_fail@PLT
 .L125:
 	.loc 1 548 0
@@ -2532,7 +2568,7 @@ nbb_bytes_written:
 	.size	nbb_bytes_written, .-nbb_bytes_written
 	.section	.rodata
 	.align 8
-.LC43:
+.LC44:
 	.string	"array_to_flush != ((void *)0) && size >= 0"
 	.text
 .globl nbb_flush_shm
@@ -2558,10 +2594,10 @@ nbb_flush_shm:
 	cmpl	$14, -20(%rbp)
 	jle	.L129
 .L128:
-	leaq	__PRETTY_FUNCTION__.4026(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4031(%rip), %rcx
 	movl	$553, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC42(%rip), %rdi
+	leaq	.LC43(%rip), %rdi
 	call	__assert_fail@PLT
 .L129:
 	.loc 1 554 0
@@ -2570,10 +2606,10 @@ nbb_flush_shm:
 	cmpl	$0, -36(%rbp)
 	jns	.L131
 .L130:
-	leaq	__PRETTY_FUNCTION__.4026(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4031(%rip), %rcx
 	movl	$554, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC43(%rip), %rdi
+	leaq	.LC44(%rip), %rdi
 	call	__assert_fail@PLT
 .L131:
 	.loc 1 556 0
@@ -2660,15 +2696,15 @@ nbb_flush_shm:
 	.size	nbb_flush_shm, .-nbb_flush_shm
 	.section	.rodata
 	.align 8
-.LC44:
+.LC45:
 	.string	"channel_id >= 0 && channel_id < 15"
 	.align 8
-.LC45:
-	.string	"ptr_to_item != ((void *)0) && size >= 0"
 .LC46:
+	.string	"ptr_to_item != ((void *)0) && size >= 0"
+.LC47:
 	.string	"else..."
 	.align 8
-.LC47:
+.LC48:
 	.string	"poff: %d psize: %d size: %zu bsize: %d\n"
 	.text
 .globl nbb_insert_item
@@ -2696,19 +2732,19 @@ nbb_insert_item:
 	cmpl	$14, -52(%rbp)
 	jle	.L140
 .L139:
-	leaq	__PRETTY_FUNCTION__.4064(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
 	movl	$582, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC44(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
 .L140:
 	.loc 1 583 0
 	cmpq	$0, -64(%rbp)
 	jne	.L141
-	leaq	__PRETTY_FUNCTION__.4064(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
 	movl	$583, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC45(%rip), %rdi
+	leaq	.LC46(%rip), %rdi
 	call	__assert_fail@PLT
 .L141:
 	.loc 1 585 0
@@ -2749,19 +2785,19 @@ nbb_insert_item:
 	cmpl	$14, -52(%rbp)
 	jle	.L143
 .L142:
-	leaq	__PRETTY_FUNCTION__.4064(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
 	movl	$590, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC44(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
 .L143:
 	.loc 1 591 0
 	cmpq	$0, -64(%rbp)
 	jne	.L144
-	leaq	__PRETTY_FUNCTION__.4064(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4069(%rip), %rcx
 	movl	$591, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC45(%rip), %rdi
+	leaq	.LC46(%rip), %rdi
 	call	__assert_fail@PLT
 .L144:
 	.loc 1 593 0
@@ -2865,7 +2901,7 @@ nbb_insert_item:
 	jmp	.L149
 .L151:
 	.loc 1 625 0
-	leaq	.LC46(%rip), %rdi
+	leaq	.LC47(%rip), %rdi
 	call	puts@PLT
 	.loc 1 627 0
 	movq	-32(%rbp), %rax
@@ -2880,7 +2916,7 @@ nbb_insert_item:
 	movq	-48(%rbp), %rax
 	movzwl	(%rax), %eax
 	movzwl	%ax, %ebx
-	leaq	.LC47(%rip), %rax
+	leaq	.LC48(%rip), %rax
 	movq	-72(%rbp), %rcx
 	movl	%esi, %r8d
 	movl	%ebx, %esi
@@ -2991,10 +3027,10 @@ nbb_insert_item:
 	.size	nbb_insert_item, .-nbb_insert_item
 	.section	.rodata
 	.align 8
-.LC48:
+.LC49:
 	.string	"ptr_to_item != ((void *)0) && size != ((void *)0)"
 	.align 8
-.LC49:
+.LC50:
 	.string	"! nbb_read_item(): invalid channel_id %d\n"
 	.text
 .globl nbb_read_item
@@ -3048,10 +3084,10 @@ nbb_read_item:
 	cmpl	$14, -36(%rbp)
 	jle	.L156
 .L155:
-	leaq	__PRETTY_FUNCTION__.4175(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4180(%rip), %rcx
 	movl	$664, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC44(%rip), %rdi
+	leaq	.LC45(%rip), %rdi
 	call	__assert_fail@PLT
 .L156:
 	.loc 1 665 0
@@ -3060,10 +3096,10 @@ nbb_read_item:
 	cmpq	$0, -56(%rbp)
 	jne	.L158
 .L157:
-	leaq	__PRETTY_FUNCTION__.4175(%rip), %rcx
+	leaq	__PRETTY_FUNCTION__.4180(%rip), %rcx
 	movl	$665, %edx
 	leaq	.LC0(%rip), %rsi
-	leaq	.LC48(%rip), %rdi
+	leaq	.LC49(%rip), %rdi
 	call	__assert_fail@PLT
 .L158:
 	.loc 1 667 0
@@ -3076,7 +3112,7 @@ nbb_read_item:
 	cmpl	$0, -36(%rbp)
 	jns	.L159
 	.loc 1 671 0
-	leaq	.LC49(%rip), %rax
+	leaq	.LC50(%rip), %rax
 	movl	-36(%rbp), %edx
 	movl	%edx, %esi
 	movq	%rax, %rdi
@@ -3176,41 +3212,41 @@ nbb_read_item:
 .LFE18:
 	.size	nbb_read_item, .-nbb_read_item
 	.section	.rodata
-	.type	__PRETTY_FUNCTION__.4175, @object
-	.size	__PRETTY_FUNCTION__.4175, 14
-__PRETTY_FUNCTION__.4175:
+	.type	__PRETTY_FUNCTION__.4180, @object
+	.size	__PRETTY_FUNCTION__.4180, 14
+__PRETTY_FUNCTION__.4180:
 	.string	"nbb_read_item"
 	.align 16
-	.type	__PRETTY_FUNCTION__.4064, @object
-	.size	__PRETTY_FUNCTION__.4064, 16
-__PRETTY_FUNCTION__.4064:
+	.type	__PRETTY_FUNCTION__.4069, @object
+	.size	__PRETTY_FUNCTION__.4069, 16
+__PRETTY_FUNCTION__.4069:
 	.string	"nbb_insert_item"
-	.type	__PRETTY_FUNCTION__.4026, @object
-	.size	__PRETTY_FUNCTION__.4026, 14
-__PRETTY_FUNCTION__.4026:
+	.type	__PRETTY_FUNCTION__.4031, @object
+	.size	__PRETTY_FUNCTION__.4031, 14
+__PRETTY_FUNCTION__.4031:
 	.string	"nbb_flush_shm"
 	.align 16
-	.type	__PRETTY_FUNCTION__.4015, @object
-	.size	__PRETTY_FUNCTION__.4015, 18
-__PRETTY_FUNCTION__.4015:
+	.type	__PRETTY_FUNCTION__.4020, @object
+	.size	__PRETTY_FUNCTION__.4020, 18
+__PRETTY_FUNCTION__.4020:
 	.string	"nbb_bytes_written"
-	.type	__PRETTY_FUNCTION__.4006, @object
-	.size	__PRETTY_FUNCTION__.4006, 15
-__PRETTY_FUNCTION__.4006:
+	.type	__PRETTY_FUNCTION__.4011, @object
+	.size	__PRETTY_FUNCTION__.4011, 15
+__PRETTY_FUNCTION__.4011:
 	.string	"nbb_bytes_read"
 	.align 16
-	.type	__PRETTY_FUNCTION__.3997, @object
-	.size	__PRETTY_FUNCTION__.3997, 20
-__PRETTY_FUNCTION__.3997:
+	.type	__PRETTY_FUNCTION__.4002, @object
+	.size	__PRETTY_FUNCTION__.4002, 20
+__PRETTY_FUNCTION__.4002:
 	.string	"nbb_bytes_available"
-	.type	__PRETTY_FUNCTION__.3949, @object
-	.size	__PRETTY_FUNCTION__.3949, 15
-__PRETTY_FUNCTION__.3949:
+	.type	__PRETTY_FUNCTION__.3954, @object
+	.size	__PRETTY_FUNCTION__.3954, 15
+__PRETTY_FUNCTION__.3954:
 	.string	"nbb_read_bytes"
 	.align 16
-	.type	__PRETTY_FUNCTION__.3913, @object
-	.size	__PRETTY_FUNCTION__.3913, 18
-__PRETTY_FUNCTION__.3913:
+	.type	__PRETTY_FUNCTION__.3918, @object
+	.size	__PRETTY_FUNCTION__.3918, 18
+__PRETTY_FUNCTION__.3918:
 	.string	"nbb_close_channel"
 	.align 16
 	.type	__PRETTY_FUNCTION__.3724, @object
@@ -5118,7 +5154,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.3913
+	.quad	__PRETTY_FUNCTION__.3918
 	.byte	0x0
 	.uleb128 0xa
 	.long	0x91
@@ -5189,7 +5225,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.3949
+	.quad	__PRETTY_FUNCTION__.3954
 	.uleb128 0x28
 	.long	.LASF90
 	.byte	0x1
@@ -5244,7 +5280,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.3997
+	.quad	__PRETTY_FUNCTION__.4002
 	.byte	0x0
 	.uleb128 0xe
 	.long	0x2df
@@ -5273,7 +5309,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4006
+	.quad	__PRETTY_FUNCTION__.4011
 	.byte	0x0
 	.uleb128 0xe
 	.long	0xd1d
@@ -5302,7 +5338,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4015
+	.quad	__PRETTY_FUNCTION__.4020
 	.byte	0x0
 	.uleb128 0xe
 	.long	0xc4e
@@ -5346,7 +5382,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4026
+	.quad	__PRETTY_FUNCTION__.4031
 	.uleb128 0x28
 	.long	.LASF78
 	.byte	0x1
@@ -5414,7 +5450,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4064
+	.quad	__PRETTY_FUNCTION__.4069
 	.uleb128 0x25
 	.string	"buf"
 	.byte	0x1
@@ -5526,7 +5562,7 @@ __PRETTY_FUNCTION__.3488:
 	.byte	0x1
 	.byte	0x9
 	.byte	0x3
-	.quad	__PRETTY_FUNCTION__.4175
+	.quad	__PRETTY_FUNCTION__.4180
 	.uleb128 0x25
 	.string	"tmp"
 	.byte	0x1

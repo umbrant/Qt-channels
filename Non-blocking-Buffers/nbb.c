@@ -277,7 +277,7 @@ void nbb_set_cb_new_data(const char* owner, cb_new_data_func func)
 
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  printf("** slot: %d, msg: %s, msg_len: %d\n", slot_id, msg, (int) msg_len);
+  printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
   assert(msg != NULL);
 
   if (msg_len == 0) {
@@ -290,7 +290,7 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
   nbb_insert_item(slot_id, msg, msg_len); 
   kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
 
-  printf("** Send '%.*s' to slot %d\n", (int) msg_len, msg, slot_id);
+  printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
 
   return 0;
 

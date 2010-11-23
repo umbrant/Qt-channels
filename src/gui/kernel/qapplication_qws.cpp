@@ -1131,6 +1131,8 @@ void QWSDisplay::Data::waitForConnection()
     }
 
     csocket->flush();
+    printf("Stalling...\n");
+    while(1);
     if (!connected_event)
         qFatal("Did not receive a connection event from the qws server");
 }
