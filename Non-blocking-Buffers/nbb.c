@@ -294,7 +294,7 @@ void nbb_set_owner(int slot_id, const char *owner)
 
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
+  //printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
   assert(msg != NULL);
 
   if (msg_len == 0) {
@@ -307,7 +307,7 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
   nbb_insert_item(slot_id, msg, msg_len); 
   kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
 
-  printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
+  //printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
 
   return 0;
 
@@ -368,6 +368,18 @@ void nbb_recv_data(int signum)
         is_new_conn_msg = 1;
       }
 
+      if (!is_new_conn_msg) {
+        nbb_flush_shm(i, recv, recv_len);
+      }
+
+      printf("** Received %zu bytes: ", recv_len);
+      int z;
+      for(z=0; z<recv_len; z++) {
+        printf("%02x", recv[z]);
+      }
+      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
+
+
       // Notify of new connection on slot i
       if (is_new_conn_msg && channel_list[i].new_conn != NULL) {
         channel_list[i].new_conn(i, channel_list[i].arg);
@@ -379,19 +391,6 @@ void nbb_recv_data(int signum)
         channel_list[i].new_data(i);
       }
 
-      printf("** Received %zu bytes: ", recv_len);
-
-      int z;
-      for(z=0; z<recv_len; z++) {
-        printf("%02x", recv[z]);
-      }
-              
-      printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
-
-
-      if (!is_new_conn_msg) {
-        nbb_flush_shm(i, recv, recv_len);
-      }
 
       // XXX: This is for debugging. Remove before production.
       // Reply message
@@ -523,8 +522,7 @@ int nbb_read_bytes(int slot, char* buf, int size)
   assert(slot >= 0 && buf != NULL && size >= 0);
 
   delay_buffer_t* delay_buffer = &(delay_buffers[slot]);
-  printf("***NBB***: Delay buffer %d: %d/%d\n",
-         slot, delay_buffer->len, delay_buffer->capacity);
+  //printf("***NBB***: Delay buffer %d: %d/%d\n", slot, delay_buffer->len, delay_buffer->capacity);
   assert(delay_buffer->capacity >= delay_buffer->len);
 
   // Attempt to read 0 bytes or buffer has nothing to read

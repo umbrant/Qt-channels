@@ -91,53 +91,25 @@ using namespace std;
 
 QT_BEGIN_NAMESPACE
 
-/***************************************************
- * HELPER DATA/FUNCTIONS FOR QWSChannelServerSocket
- ***************************************************/
-
-// Callback function to handle new connection.
-// It assumes that |arg| is the object pointer to which this channel slot
-// belongs.
-static void server_on_new_connection(int slot_id, void *arg)
-{
-    printf("server_on_new_connection called for %d \n", slot_id);
-    assert(arg != 0 && slot_id >= 0); 
-    QWSChannelServerSocket *serverSocket = 0;
-    serverSocket = reinterpret_cast<QWSChannelServerSocket*> (arg);
-    serverSocket->incomingConnection(slot_id);
-}
-
-// XXX: Unused
-// Callback function to handle data for server socket
-// It assumes that |arg| is the object pointer to which this channel slot
-// belongs.
-static void server_on_new_data(int slot_id)
-{
-    printf("server_on_new_data called for %d \n", slot_id);
-    assert(slot_id >= 0);
-
-    int n = nbb_bytes_available(slot_id);
-    char *buf = new char[n];
-    int ret = nbb_read_bytes(slot_id, buf, n);
-
-    printf("server_on_new_data: Got '%.*s' (%d bytes out of %d requested bytes)\n",
-           ret, buf, ret, n);
-    delete [] buf;
-}
-
 /******************************************
   HELPER FUNCTION/DATA FOR QWSChannelSocket
  *******************************************/
 
-// Global channel client socket mappings from slot ID to sockets
-static map<int, QWSChannelSocket*> g_clientSocketMap;
+// Global socket mappings from slot ID to sockets and flags
+meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
+meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
 
-// Function to handle new incoming data
-static void client_on_new_available_data(int slot_id)
+
+
+// Called in the event loop to clear out new data
+static void client_on_new_available_data(int slot_id) {
+    g_clientSocketMap[slot_id].has_data = true;
+}
+
+void client_handle_new_available_data(int slot_id)
 {
-    printf("client_on_new_available_data called (slot_id %d)\n", slot_id);
-    assert(g_clientSocketMap.size() > 0);
-    QWSChannelSocket *socket = g_clientSocketMap[slot_id];
+    QWSChannelSocket *socket = g_clientSocketMap[slot_id].csocket;
+    g_clientSocketMap[slot_id].has_data = false;
     assert(socket != 0);
     socket->emitReadyRead();
 }
@@ -165,17 +137,6 @@ QString QWSChannelSocket::errorString()
     cout << "QWSChannelSocket::errorString(): "
          << "CALLED BUT NOT IMPLEMENTED!" << endl;    
     return QString();
-/*
-    switch (QUnixSocket::error()) {
-    case NoError:
-        return QString();
-    case InvalidPath:
-    case NonexistentPath:
-        return QLatin1String("Bad path"); // NO_TR
-    default:
-        return QLatin1String("Bad socket"); // NO TR
-    }
-*/
 }
 
 // Not implemented
@@ -183,24 +144,6 @@ void QWSChannelSocket::forwardStateChange(QChannelSocket::SocketState st  )
 {
     cout << "QWSChannelSocket::forwardStateChange(): "
          << "CALLED BUT NOT IMPLEMENTED!" << endl;
-/*
-    switch ( st )
-    {
-        case ConnectedState:
-            emit connected();
-            break;
-        case ClosingState:
-            break;
-        case UnconnectedState:
-            emit disconnected();
-            break;
-        default:
-            // nothing
-            break;
-    }
-    if ( QUnixSocket::error() != NoError )
-        emit error((QAbstractSocket::SocketError)0);
-*/
 }
 
 bool QWSChannelSocket::connectToLocalFile(const QString &file)
@@ -253,7 +196,10 @@ bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket
     // Keep mapping from slot ID to client socket so that inside the callback
     // function (which has slot ID as argument), we can identify the client
     // socket object.
-    g_clientSocketMap[socketDescriptor] = this;
+    meta_client_socket_t s;
+    s.csocket = this;
+    s.has_data = false;
+    g_clientSocketMap[socketDescriptor] = s;
 
     // (Possible change ownership from service to this client socket)
     nbb_set_owner(socketDescriptor, socketName);
@@ -270,6 +216,29 @@ bool QWSChannelSocket::setSocketDescriptor(int socketDescriptor, QAbstractSocket
  * QWSChannelServerSocket
  *
  **********************************************************************/
+
+/***************************************************
+ * HELPER DATA/FUNCTIONS FOR QWSChannelServerSocket
+ ***************************************************/
+
+// Callback function to handle new connection.
+// It assumes that |arg| is the object pointer to which this channel slot
+// belongs.
+static void server_on_new_connection(int slot_id, void *arg) {
+    g_serverSocketMap[slot_id].ssocket = 
+                reinterpret_cast<QWSChannelServerSocket*>(arg);
+    g_serverSocketMap[slot_id].has_new_connection = true;
+}
+
+void server_handle_new_connection(int slot_id)
+{
+    assert(slot_id >= 0); 
+    QWSChannelServerSocket *serverSocket = g_serverSocketMap[slot_id].ssocket;
+    g_serverSocketMap[slot_id].has_new_connection = false;
+    serverSocket->incomingConnection(slot_id);
+}
+
+
 QWSChannelServerSocket::QWSChannelServerSocket(const QString& file, QObject *parent)
 
 #ifndef QT_NO_SXE

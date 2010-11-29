@@ -84,6 +84,7 @@ public:
         ListeningState,
         ClosingState
     };
+    bool isSequential() const;
 
     QChannelSocket(QObject * = 0);
     virtual ~QChannelSocket();
@@ -93,10 +94,12 @@ public:
 
     void emitReadyRead();
 
+    /*
     qint64 write(const char * data, qint64 maxSize);
     qint64 write(const QByteArray & byteArray);
+    */
     
-    qint64 read(char * data, qint64 maxSize);
+    //qint64 read(char * data, qint64 maxSize);
     QByteArray read(qint64 maxSize);
 
     // Required for proper QAbstractSocket casting
