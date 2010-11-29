@@ -61,6 +61,7 @@
 #include <QtNetwork/qtcpsocket.h>
 #include <QtNetwork/qtcpserver.h>
 #endif
+#include <map>
 
 QT_BEGIN_HEADER
 
@@ -70,6 +71,26 @@ QT_MODULE(Gui)
 
 class QWSChannelSocket;
 class QWSChannelServerSocket;
+
+// New struct that wraps a socket with a flag, which is set by signal handler
+// Flags are then checked and handled in the Qt event loop
+typedef struct meta_client_socket {
+    QWSChannelSocket* csocket;
+    bool has_data;
+} meta_client_socket_t;
+
+typedef struct meta_server_socket {
+    QWSChannelServerSocket* ssocket;
+    bool has_new_connection;
+} meta_server_socket_t;
+
+
+extern meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
+extern meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
+
+void client_handle_new_available_data(int slot_id);
+void server_handle_new_connection(int slot_id);
+
 
 #if 0
 class QChannelServer : public QObject
