@@ -147,7 +147,7 @@ static void *get_dl_symbol(const char *lib, const char *sym)
 static int self_pipe[2];
 static bool self_pipe_initialized = false;
 
-void signal_self_pipe(void)
+extern "C" void signal_self_pipe(void)
 {
     assert(self_pipe_initialized);
 
