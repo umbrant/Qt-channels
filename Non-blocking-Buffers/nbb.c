@@ -1,5 +1,7 @@
 #include "nbb.h"
 #include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 // list of channel pointers (to shared memory)
 struct channel channel_list[SERVICE_MAX_CHANNELS] = {};
@@ -727,7 +729,7 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
 volatile handle_events_func handler_func;
 
 int nbb_set_handle_events(handle_events_func newfunc) {
-    printf("nbb_set_handle_events func is %p %p\n", &handler_func, handler_func);
+    printf("nbb_set_handle_events func is %d %p %p\n", getpid(), &handler_func, handler_func);
     if(handler_func == NULL) {
         handler_func = newfunc;
         printf("==== nbb_set_handle_events %p %p\n", &handler_func, handler_func);
@@ -736,7 +738,7 @@ int nbb_set_handle_events(handle_events_func newfunc) {
 }
 
 int nbb_handle_events() {
-    printf("nbb_handle_events func is %p %p\n", &handler_func, handler_func);
+    printf("nbb_handle_events func is %d %p %p\n", getpid(), &handler_func, handler_func);
     if(handler_func != NULL) {
         printf("==== nbb_handle_events calling %p %p\n", &handler_func, handler_func);
         return handler_func();

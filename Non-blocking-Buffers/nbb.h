@@ -57,6 +57,7 @@ enum {
 // Callback mechanisms for nbb events
 // Hardcode for now. We can generalize the function prototype later.
 
+
 // New connection event
 typedef void (*cb_new_conn_func)(int slot_id, void *arg);
 void nbb_set_cb_new_connection(const char* owner, cb_new_conn_func func, void* arg);
@@ -168,6 +169,8 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size);
 
 // Called by event dispatcher to make the sockets check the NBB for new events
 typedef int(*handle_events_func)(void);
+extern volatile handle_events_func handler_func;
+
 int nbb_handle_events();
 int nbb_set_handle_events(handle_events_func);
 

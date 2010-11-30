@@ -46,7 +46,6 @@
 #include "qsocketnotifier.h"
 #include "qthread.h"
 #include "qelapsedtimer.h"
-#include "../../gui/embedded/nbb.h"
 
 #include "qeventdispatcher_unix_p.h"
 #include <private/qthread_p.h>
@@ -56,6 +55,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <dlfcn.h>
+#include <cassert>
 
 // VxWorks doesn't correctly set the _POSIX_... options
 #if defined(Q_OS_VXWORKS)
@@ -106,11 +107,32 @@ static void initThreadPipeFD(int fd)
 }
 #endif
 
+typedef int (*handle_events_func)(void);
+static handle_events_func nbb_handle_events;
+
 QEventDispatcherUNIXPrivate::QEventDispatcherUNIXPrivate()
 {
     extern Qt::HANDLE qt_application_thread_id;
     mainThread = (QThread::currentThreadId() == qt_application_thread_id);
     bool pipefail = false;
+
+    // Dynamically load nbb_handle_events
+    void *handle = dlopen("/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtGui.so", RTLD_LAZY);
+    if (!handle) {
+        printf("%s\n", dlerror());
+        assert(false);
+    }
+    // Clear any existing error
+    dlerror();
+
+    nbb_handle_events = (handle_events_func) dlsym(handle, "nbb_handle_events");
+    char *error = dlerror();
+    if (error != NULL) {
+        printf("%s\n", error);
+        assert(false);
+    }
+
+    dlclose(handle);
 
     // initialize the common parts of the event loop
 #if defined(Q_OS_INTEGRITY)
@@ -304,6 +326,7 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         }
     }
 
+    printf("** qeventdispatcher right before handle_event\n");
     nbb_handle_events();
 
     /*
