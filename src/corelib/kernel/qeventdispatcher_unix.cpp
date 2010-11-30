@@ -318,6 +318,9 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         // Let's handle our self-pipe first and subtract 1, in case Qt stuff relies
         // on the the return value of select().
         if (nsel > 0 && FD_ISSET(self_pipe[READ_END], &sn_vec[0].select_fds)) {
+            // Comment this out when it works...
+            printf("%s: Got input from self-pipe...\n", __func__);
+
             // Consume all the bytes in the self-pipe and call handle events
             // read() is non-blocking as set above
             char tmp[16];
