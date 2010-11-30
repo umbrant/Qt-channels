@@ -724,78 +724,24 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
   return OK;
 }
 
+volatile handle_events_func handler_func;
 
-
-
-
-
-
-
-
-// DEPRECATED BELOW
-
-
-
-/*
-
-
-
-
-
-
-
-int read_asynch(struct obj* ptr_to_item) {
-	return nbb_read_item(ptr_to_item);
+int nbb_set_handle_events(handle_events_func newfunc) {
+    printf("nbb_set_handle_events func is %p %p\n", &handler_func, handler_func);
+    if(handler_func == NULL) {
+        handler_func = newfunc;
+        printf("==== nbb_set_handle_events %p %p\n", &handler_func, handler_func);
+    }
+    return 0;
 }
 
-int readb(struct obj* ptr_to_item) {
-	int ret;
-	do {
-		ret = nbb_read_item(ptr_to_item);
-	} while(ret != OK);
-	return ret;
+int nbb_handle_events() {
+    printf("nbb_handle_events func is %p %p\n", &handler_func, handler_func);
+    if(handler_func != NULL) {
+        printf("==== nbb_handle_events calling %p %p\n", &handler_func, handler_func);
+        return handler_func();
+    } else {
+        printf("==== nbb_handle_events called, but no function set!\n");
+    }
+    return 0;
 }
-
-int write_asynch(struct obj* ptr_to_item) {
-	struct obj *ptr_to_defunct_item = NULL;
-	int ret;
-
-	// Try only once, we're non-blocking
-	ret = nbb_insert_item(ptr_to_item, &ptr_to_defunct_item);
-
-	// Free defunct pointer if not NULL
-  if(ret == OK && ptr_to_defunct_item) {
-  	free_obj(ptr_to_defunct_item);
-  }
-
-  return ret;
-}
-
-int writeb(struct obj* ptr_to_item) {
-	struct obj *ptr_to_defunct_item = NULL;
-	int ret;
-
-	// Spin until success
-	do {
-		ret = nbb_insert_item(ptr_to_item, &ptr_to_defunct_item);
-	} while(ret != OK);
-
-	// Free defunct pointer if not NULL
-  if(ptr_to_defunct_item) {
-  	free_obj(ptr_to_defunct_item);
-  }
-
-  return ret;
-}
-
-int clean_mem() {
-  int ret = shm_unlink(SHARED_MEM_NAME);
-
-  if (ret < 0) {
-    perror("! shm_unlink\n");
-    return ret;
-  }
-
-  return 0;
-}
-*/

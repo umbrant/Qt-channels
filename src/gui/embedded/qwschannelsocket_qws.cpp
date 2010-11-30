@@ -96,10 +96,20 @@ QT_BEGIN_NAMESPACE
  *******************************************/
 
 // Global socket mappings from slot ID to sockets and flags
-meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
-meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
+static meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
+static meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
 
-
+static int socket_handle_events() {
+    for(int i=1; i<SERVICE_MAX_CHANNELS; i++) {
+        if(g_clientSocketMap[i].has_data == true) {
+            client_handle_new_available_data(i);
+        }
+        if(g_serverSocketMap[i].has_new_connection == true) {
+            server_handle_new_connection(i);
+        }
+    }
+    return 0;
+}
 
 // Called in the event loop to clear out new data
 static void client_on_new_available_data(int slot_id) {
@@ -265,6 +275,8 @@ void QWSChannelServerSocket::init(const QString &file)
 
     ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
     //::nbb_set_cb_new_data(service_name, server_on_new_data);
+
+    nbb_set_handle_events(socket_handle_events);
 
     cout << "QWSChannelServerSocket::init(): Successfully init-ed "
          << service_name << endl;

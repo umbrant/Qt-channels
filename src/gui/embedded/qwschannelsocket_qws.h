@@ -85,8 +85,10 @@ typedef struct meta_server_socket {
 } meta_server_socket_t;
 
 
+/*
 extern meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
 extern meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
+*/
 
 void client_handle_new_available_data(int slot_id);
 void server_handle_new_connection(int slot_id);
