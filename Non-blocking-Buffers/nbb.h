@@ -166,31 +166,11 @@ int nbb_bytes_written(int slot);
 int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size);
 int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size);
 
-// Copy contents of obj1 to obj2
-//int copy_obj(struct obj *obj1, struct obj *obj2);
-//int free_obj(struct obj *object);
+// Called by event dispatcher to make the sockets check the NBB for new events
+typedef int(*handle_events_func)(void);
+int nbb_handle_events();
+int nbb_set_handle_events(handle_events_func);
 
-// These are the functions that the user should normally be calling
-//
-// They handle blocking vs. async, and copying/freeing things from
-// the buffer.
-
-/*
-// Asynchronous
-int read_asynch(struct obj* ptr_to_item);
-int write_asynch(struct obj* ptr_to_item);
-// Synchronous
-int readb(struct obj* ptr_to_item);
-int writeb(struct obj* ptr_to_item);
-
-// Used to get defunct buffer slots
-
-
-//struct obj* get_defunct_ptr();
-
-// Internal function: clean up the shared memory
-int clean_mem();
-*/
 
 #endif // NBB_H
 
