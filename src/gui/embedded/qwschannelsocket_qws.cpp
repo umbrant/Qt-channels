@@ -58,6 +58,7 @@
 #include <sys/un.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <dlfcn.h>
 
 #include <iostream>
 
@@ -95,6 +96,41 @@ QT_BEGIN_NAMESPACE
   HELPER FUNCTION/DATA FOR QWSChannelSocket
  *******************************************/
 
+// Dynamically load |sym| from |lib|
+static void *get_dl_symbol(const char *lib, const char *sym)
+{
+    assert(lib != 0 && sym != 0);
+
+    void *handle = dlopen(lib, RTLD_LAZY);
+    if (!handle) {
+        printf("%s\n", dlerror());
+        assert(false && "dlopen failed");
+    }
+
+    // Clear any existing error
+    dlerror();
+
+    void *lib_sym = dlsym(handle, sym);
+    char *error = dlerror();
+    if (error != NULL) {
+        printf("%s\n", error);
+        assert(false && "dlsym failed");
+    }
+
+    dlclose(handle);
+
+    return lib_sym;
+}
+
+// Self-pipe trick
+// XXX: Have to dlopen()/dlsym() from QtCoreLib
+// We initialize these in QWS Server Socket since
+// we always create its instances first.
+typedef void (*self_pipe_func)(void);
+static self_pipe_func signal_self_pipe;
+static bool self_pipe_func_initialized = false;
+
+
 // Global socket mappings from slot ID to sockets and flags
 static meta_client_socket_t g_clientSocketMap[SERVICE_MAX_CHANNELS];
 static meta_server_socket_t g_serverSocketMap[SERVICE_MAX_CHANNELS];
@@ -114,6 +150,10 @@ static int socket_handle_events() {
 // Called in the event loop to clear out new data
 static void client_on_new_available_data(int slot_id) {
     g_clientSocketMap[slot_id].has_data = true;
+
+    // Trigger self-pipe in event dispatcher (QtCorelib)
+    assert(signal_self_pipe != 0);
+    signal_self_pipe();
 }
 
 void client_handle_new_available_data(int slot_id)
@@ -238,6 +278,10 @@ static void server_on_new_connection(int slot_id, void *arg) {
     g_serverSocketMap[slot_id].ssocket = 
                 reinterpret_cast<QWSChannelServerSocket*>(arg);
     g_serverSocketMap[slot_id].has_new_connection = true;
+
+    // Trigger self-pipe in event dispatcher (QtCorelib)
+    assert(signal_self_pipe != 0);
+    signal_self_pipe();
 }
 
 void server_handle_new_connection(int slot_id)
@@ -275,6 +319,16 @@ void QWSChannelServerSocket::init(const QString &file)
 
     ::nbb_set_cb_new_connection(service_name, server_on_new_connection, this);
     //::nbb_set_cb_new_data(service_name, server_on_new_data);
+
+    // Dynamically load function from QtCoreLib (event dispatcher)
+    static const char *lib =
+            "/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtCore.so";
+    static const char *sym = "signal_self_pipe";
+    if (!self_pipe_func_initialized) {
+        signal_self_pipe = (self_pipe_func) get_dl_symbol(lib, sym);
+        assert(signal_self_pipe != 0);
+        self_pipe_func_initialized = true;
+    }
 
     nbb_set_handle_events(socket_handle_events);
 

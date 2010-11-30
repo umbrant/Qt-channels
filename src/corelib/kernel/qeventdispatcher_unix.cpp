@@ -57,6 +57,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <cassert>
+#include <unistd.h>
 
 // VxWorks doesn't correctly set the _POSIX_... options
 #if defined(Q_OS_VXWORKS)
@@ -107,8 +108,59 @@ static void initThreadPipeFD(int fd)
 }
 #endif
 
+//======================= NBB HACK =======================
 typedef int (*handle_events_func)(void);
 static handle_events_func nbb_handle_events;
+
+// Dynamically load |sym| from |lib|
+static void *get_dl_symbol(const char *lib, const char *sym)
+{
+    assert(lib != 0 && sym != 0);
+
+    void *handle = dlopen(lib, RTLD_LAZY);
+    if (!handle) {
+        printf("%s\n", dlerror());
+        assert(false && "dlopen failed");
+    }
+
+    // Clear any existing error
+    dlerror();
+
+    void *lib_sym = dlsym(handle, sym);
+    char *error = dlerror();
+    if (error != NULL) {
+        printf("%s\n", error);
+        assert(false && "dlsym failed");
+    }
+
+    dlclose(handle);
+
+    return lib_sym;
+}
+
+// Function to call from signal handler for self-pipe trick
+// XXX: This will be referenced by dlopen()/dlsym() in libGui
+// since we need to call this function in the signal handler in libGui.
+
+#define READ_END 0
+#define WRITE_END 1
+static int self_pipe[2];
+static bool self_pipe_initialized = false;
+
+void signal_self_pipe(void)
+{
+    assert(self_pipe_initialized);
+
+    char c = 1;
+
+    int ret = write(self_pipe[WRITE_END], &c, sizeof(char));
+    if (ret < 0) {
+        perror("write");
+        printf("***signal_self_pipe: Can't self-pipe...\n");
+        assert(false);
+    }
+}
+
 
 QEventDispatcherUNIXPrivate::QEventDispatcherUNIXPrivate()
 {
@@ -116,23 +168,39 @@ QEventDispatcherUNIXPrivate::QEventDispatcherUNIXPrivate()
     mainThread = (QThread::currentThreadId() == qt_application_thread_id);
     bool pipefail = false;
 
+    // Initialize self-pipe
+    if (!self_pipe_initialized) {
+        int ret = pipe(self_pipe);
+        if (ret < 0) {
+            perror("pipe");
+            printf("***QEventDispatcherUNIXPrivate: Can't init self-pipe...\n");
+            assert(false);
+        }
+
+        // We use non-blocking pipe since in case we receive too many signals
+        // we don't want to block when we write() to the pipe in the signal context.
+        // Also, we don't want to block on read() in doSelect().
+        ret = fcntl(self_pipe[READ_END], F_SETFD, O_NONBLOCK);
+        if (ret < 0) {
+            perror("fcntl");
+            printf("***QEventDispatcherUNIXPrivate: Can't set pipe to non-blocking...\n");
+            assert(false);
+        }
+        ret = fcntl(self_pipe[WRITE_END], F_SETFD, O_NONBLOCK);
+        if (ret < 0) {
+            perror("fcntl");
+            printf("***QEventDispatcherUNIXPrivate: Can't set pipe to non-blocking...\n");
+            assert(false);
+        }
+
+        self_pipe_initialized = true;
+    }
+
     // Dynamically load nbb_handle_events
-    void *handle = dlopen("/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtGui.so", RTLD_LAZY);
-    if (!handle) {
-        printf("%s\n", dlerror());
-        assert(false);
-    }
-    // Clear any existing error
-    dlerror();
-
-    nbb_handle_events = (handle_events_func) dlsym(handle, "nbb_handle_events");
-    char *error = dlerror();
-    if (error != NULL) {
-        printf("%s\n", error);
-        assert(false);
-    }
-
-    dlclose(handle);
+    const char *lib = "/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtGui.so";
+    const char *sym = "nbb_handle_events";
+    nbb_handle_events = (handle_events_func) get_dl_symbol(lib, sym);
+    assert(nbb_handle_events != 0);
 
     // initialize the common parts of the event loop
 #if defined(Q_OS_INTEGRITY)
@@ -232,6 +300,12 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
             FD_ZERO(&sn_vec[2].select_fds);
         }
 
+        // Sanity check
+        assert(self_pipe_initialized);
+        assert(self_pipe[READ_END] >= 0 && self_pipe[READ_END] < FD_SETSIZE);
+        // Do our own self-pipe trick
+        FD_SET(self_pipe[READ_END], &sn_vec[0].select_fds);
+
         FD_SET(thread_pipe[0], &sn_vec[0].select_fds);
         highest = qMax(highest, thread_pipe[0]);
 
@@ -240,6 +314,35 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
                          &sn_vec[1].select_fds,
                          &sn_vec[2].select_fds,
                          timeout);
+
+        // Let's handle our self-pipe first and subtract 1, in case Qt stuff relies
+        // on the the return value of select().
+        if (nsel > 0 && FD_ISSET(self_pipe[READ_END], &sn_vec[0].select_fds)) {
+            // Consume all the bytes in the self-pipe and call handle events
+            // read() is non-blocking as set above
+            char tmp[16];
+            int ret;
+            while ((ret = read(self_pipe[READ_END], tmp, sizeof(tmp))) > 0)
+                ;
+            if (ret < 0) {
+                perror("read");
+                assert(false);
+            }
+
+            // We finished consuming bytes from the self pipe
+            printf("** qeventdispatcher right before handle_event\n");
+            nbb_handle_events();
+
+            nsel--;
+
+            // XXX: Only the self-pipe's read end was available, we should
+            // restart the select() call.
+            // XXX: Or maybe we should simply return from this doSelect()???
+            if (nsel == 0) {
+                continue;
+            }
+        }
+
     } while (nsel == -1 && (errno == EINTR || errno == EAGAIN));
 
     if (nsel == -1) {
@@ -326,8 +429,8 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         }
     }
 
-    printf("** qeventdispatcher right before handle_event\n");
-    nbb_handle_events();
+//    printf("** qeventdispatcher right before handle_event\n");
+//    nbb_handle_events();
 
     /*
     for(int i=1; i<SERVICE_MAX_CHANNELS; i++) {

@@ -4,6 +4,7 @@ embedded {
 	CONFIG -= opengl x11
 	LIBS -= -dl -lrt
 	KERNEL_P        = kernel
+    LIBS += -ldl
 
 	!mac:HEADERS += embedded/qsoundqss_qws.h
 	HEADERS += \
@@ -77,7 +78,7 @@ embedded {
 # Decorations
 #
     contains( decorations, default ) {
-    	HEADERS += embedded/qdecorationdefault_qws.h
+        HEADERS += embedded/qdecorationdefault_qws.h
     	SOURCES += embedded/qdecorationdefault_qws.cpp
     }
     contains( decorations, styled ) {
