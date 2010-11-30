@@ -152,9 +152,27 @@ void signal_self_pipe(void)
     assert(self_pipe_initialized);
 
     char c = 1;
+    int ret;
 
-    int ret = write(self_pipe[WRITE_END], &c, sizeof(char));
+    // In case we get interrupted by a signal, we should restart this write()
+    // since we rely on it to emit Qt signals
+    do {
+        ret = write(self_pipe[WRITE_END], &c, sizeof(char));
+    } while (ret < 0 && errno == EINTR);
+
+    // Not sure when write() returns 0... It shouldn't in any cases.
+    assert(ret != 0);
+
     if (ret < 0) {
+        // write() would block... This means we are writing too much to the
+        // pipe (sending too many signals) but haven't consume them yet.
+        // Shouldn't happen in our case...
+        if (errno == EAGAIN) {
+            printf("***%s: Warning: Exceeded the pipe buffer capacity...\n",
+                __func__);
+            assert(false);
+        }
+        // Otherwise, real errors
         perror("write");
         printf("***signal_self_pipe: Can't self-pipe...\n");
         assert(false);
@@ -325,9 +343,19 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
             // read() is non-blocking as set above
             char tmp[16];
             int ret;
-            while ((ret = read(self_pipe[READ_END], tmp, sizeof(tmp))) > 0)
-                ;
-            if (ret < 0) {
+
+            // Keep reading until we consume all the bytes, OR
+            // restart when we are interrupted by a signal.
+            do {
+                ret = read(self_pipe[READ_END], tmp, sizeof(tmp));
+            } while ((ret > 0) || (ret < 0 && errno == EINTR));
+
+            // We should not receive EOF here (read() returns 0)
+            assert(ret != 0);
+
+            // EAGAIN means we finish consuming the self-pipe
+            if (ret < 0 && errno != EAGAIN) {
+                // Real error
                 perror("read");
                 assert(false);
             }
