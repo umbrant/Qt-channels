@@ -323,7 +323,7 @@ void QWSChannelServerSocket::init(const QString &file)
     // Dynamically load function from QtCoreLib (event dispatcher)
     static const char *lib =
             "/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtCore.so";
-    static const char *sym = "signal_self_pipe";
+    static const char *sym = "signal_self_pipe_func";
     if (!self_pipe_func_initialized) {
         signal_self_pipe = (self_pipe_func) get_dl_symbol(lib, sym);
         assert(signal_self_pipe != 0);

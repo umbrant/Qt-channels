@@ -147,6 +147,9 @@ static void *get_dl_symbol(const char *lib, const char *sym)
 static int self_pipe[2];
 static bool self_pipe_initialized = false;
 
+typedef void(*self_pipe_func)(void);
+Q_CORE_EXPORT self_pipe_func signal_self_pipe_func;
+
 extern "C" void signal_self_pipe(void)
 {
     assert(self_pipe_initialized);
@@ -177,6 +180,8 @@ extern "C" void signal_self_pipe(void)
         printf("***signal_self_pipe: Can't self-pipe...\n");
         assert(false);
     }
+
+    printf("%s is called...\n", __func__);
 }
 
 
@@ -187,6 +192,8 @@ QEventDispatcherUNIXPrivate::QEventDispatcherUNIXPrivate()
     bool pipefail = false;
 
     // Initialize self-pipe
+    signal_self_pipe_func = signal_self_pipe;
+
     if (!self_pipe_initialized) {
         int ret = pipe(self_pipe);
         if (ret < 0) {

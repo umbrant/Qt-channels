@@ -42,8 +42,6 @@
 #ifndef QEVENTDISPATCHER_UNIX_P_H
 #define QEVENTDISPATCHER_UNIX_P_H
 
-extern "C" void signal_self_pipe(void);
-
 //
 //  W A R N I N G
 //  -------------
