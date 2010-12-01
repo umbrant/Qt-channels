@@ -1132,6 +1132,7 @@ void QWSDisplay::Data::waitForConnection()
         }
         csocket->flush();
         csocket->waitForReadyRead(100);
+        sleep(1);
     }
 
     csocket->flush();
