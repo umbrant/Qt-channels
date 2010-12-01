@@ -122,6 +122,9 @@ static void *get_dl_symbol(const char *lib, const char *sym)
     return lib_sym;
 }
 
+static const char *lib = "/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtCore.so";
+static const char *sym = "_Z16signal_self_pipev";
+
 // Self-pipe trick
 // XXX: Have to dlopen()/dlsym() from QtCoreLib
 // We initialize these in QWS Server Socket since
@@ -153,7 +156,7 @@ static void client_on_new_available_data(int slot_id) {
 
     // Trigger self-pipe in event dispatcher (QtCorelib)
     assert(signal_self_pipe != 0);
-    signal_self_pipe();
+    (signal_self_pipe)();
 }
 
 void client_handle_new_available_data(int slot_id)
@@ -175,6 +178,15 @@ QWSChannelSocket::QWSChannelSocket(QObject *parent)
     // XXX: Not sure if we should comment this out!
 //    QObject::connect( this, SIGNAL(stateChanged(SocketState)),
 //            this, SLOT(forwardStateChange(SocketState)));
+
+    // Dynamically load function from QtCoreLib (event dispatcher)
+    if (!self_pipe_func_initialized) {
+        signal_self_pipe = (self_pipe_func) get_dl_symbol(lib, sym);
+        assert(signal_self_pipe != 0);
+        self_pipe_func_initialized = true;
+    }
+
+    nbb_set_handle_events(socket_handle_events);
 }
 
 QWSChannelSocket::~QWSChannelSocket()
@@ -281,7 +293,7 @@ static void server_on_new_connection(int slot_id, void *arg) {
 
     // Trigger self-pipe in event dispatcher (QtCorelib)
     assert(signal_self_pipe != 0);
-    signal_self_pipe();
+    (signal_self_pipe)();
 }
 
 void server_handle_new_connection(int slot_id)
@@ -321,9 +333,6 @@ void QWSChannelServerSocket::init(const QString &file)
     //::nbb_set_cb_new_data(service_name, server_on_new_data);
 
     // Dynamically load function from QtCoreLib (event dispatcher)
-    static const char *lib =
-            "/usr/local/Trolltech/QtEmbedded-4.7.0-generic/lib/libQtCore.so";
-    static const char *sym = "signal_self_pipe_func";
     if (!self_pipe_func_initialized) {
         signal_self_pipe = (self_pipe_func) get_dl_symbol(lib, sym);
         assert(signal_self_pipe != 0);
