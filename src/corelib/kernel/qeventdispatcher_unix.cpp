@@ -150,8 +150,9 @@ static bool self_pipe_initialized = false;
 typedef void(*self_pipe_func)(void);
 Q_CORE_EXPORT self_pipe_func signal_self_pipe_func;
 
-extern "C" void signal_self_pipe(void)
+Q_CORE_EXPORT void signal_self_pipe(void)
 {
+    printf("signal_self_pipe called.\n");
     assert(self_pipe_initialized);
 
     char c = 1;
@@ -205,13 +206,13 @@ QEventDispatcherUNIXPrivate::QEventDispatcherUNIXPrivate()
         // We use non-blocking pipe since in case we receive too many signals
         // we don't want to block when we write() to the pipe in the signal context.
         // Also, we don't want to block on read() in doSelect().
-        ret = fcntl(self_pipe[READ_END], F_SETFD, O_NONBLOCK);
+        ret = fcntl(self_pipe[READ_END], F_SETFL, O_NONBLOCK);
         if (ret < 0) {
             perror("fcntl");
             printf("***QEventDispatcherUNIXPrivate: Can't set pipe to non-blocking...\n");
             assert(false);
         }
-        ret = fcntl(self_pipe[WRITE_END], F_SETFD, O_NONBLOCK);
+        ret = fcntl(self_pipe[WRITE_END], F_SETFL, O_NONBLOCK);
         if (ret < 0) {
             perror("fcntl");
             printf("***QEventDispatcherUNIXPrivate: Can't set pipe to non-blocking...\n");
