@@ -31,11 +31,11 @@ extern "C" {
 #include "constants.h"
 
 // BUFFER_SIZE is limited to ~32,767 since it has to be represented by an unsigned short / 2
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE (256 * 4)
 #define NUM_ITEMS 500000
 
 // This should be dynamic in the future
-#define PAGE_SIZE 4096 // This should probably be found programatically
+#define PAGE_SIZE (4096 * 4) // This should probably be found programatically
 
 
 // Betting that it's some kind of malloc/mem allocation error...

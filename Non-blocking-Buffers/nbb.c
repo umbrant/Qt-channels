@@ -479,6 +479,9 @@ int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int i
   }
 
   memset(&delay_buffers[free_slot], 0, sizeof(struct delay_buffer));
+  delay_buffers[free_slot].content = (char*) calloc(1<<20, sizeof(char));
+  assert(delay_buffers[free_slot].content);
+  delay_buffers[free_slot].capacity = 1<<20;
 
   return free_slot;
 }
@@ -584,14 +587,21 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   int new_size = buffer->len + size;
 
   // Grow the buffer if exceeding current capacity
+#if 0
   if (new_size > buffer->capacity) {
     // Initial capacity (2 * MAX_MSG_LEN)
     if (buffer->capacity == 0) {
       buffer->capacity = MAX_MSG_LEN;
     }
-    buffer->content = (char *) realloc(buffer->content, 2 * buffer->capacity);
-    buffer->capacity = 2 * buffer->capacity;
+    int new_buffer_capacity = 2 * buffer->capacity < new_size ? 
+        new_size : 
+        2 * buffer->capacity;
+
+    buffer->content = (char *) realloc(buffer->content, new_buffer_capacity);
+    buffer->capacity = new_buffer_capacity;
   }
+
+#endif
 
   // Append new data to the end (or beginning if it's the first flush)
   memcpy(buffer->content + buffer->len, array_to_flush, size);
