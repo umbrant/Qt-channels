@@ -20,8 +20,6 @@ void data_available(int signum)
 	memcpy(recv_str, recv, recv_len);
 	recv_str[recv_len] = '\0';
  
-printf("nameserver recv: %s\n", recv_str);
-
   request_type = atoi(strtok(recv_str, " "));
   handle_connection[request_type](strtok(NULL, ""));
 
@@ -30,7 +28,6 @@ printf("nameserver recv: %s\n", recv_str);
   free(recv_str);
 }
 
-//TODO: arg is somehow messed up on first connection, ><
 void handle_client(char* arg)
 {
   printf("\n** Handling client\n");
@@ -89,7 +86,6 @@ void handle_service(char* arg)
 
   slot = reserve_service_slot();
 
-//printf("test\n");
   if(slot == -1) {
     return;
   }

@@ -10,8 +10,8 @@ delay_buffer_t delay_buffers[SERVICE_MAX_CHANNELS];
 
 sem_t *sem_id;   // POSIX semaphore
 
-// Assume maximum pid value of 16-bit
-#define PID_MAX_STRLEN 5
+#define PID_MAX_STRLEN 5 // Assume maximum pid value of 16-bit
+#define CHANNEL_MAX_STRLEN 5
 
 // When a client nbb_connect_service()s to a service, this message is
 // sent to the service to note the new incoming connection.
@@ -40,12 +40,12 @@ int nbb_nameserver_connect(const char* request, char** ret, int* ret_len)
   fscanf(pFile,"%d",&nameserver_pid); 
   fclose(pFile); 
 
-  nbb_insert_item(0, request, strlen(request));
+  nbb_insert_item(NAMESERVER_SLOT, request, strlen(request));
   kill(nameserver_pid, NBB_SIGNAL);
 
   // Poll until we get something
   do{ 
-    retval = nbb_read_item(0, (void**)&recv, &recv_len);
+    retval = nbb_read_item(NAMESERVER_SLOT, (void**)&recv, &recv_len);
   } while (retval == BUFFER_EMPTY || retval == BUFFER_EMPTY_PRODUCER_INSERTING);
 
   // Set return values
@@ -82,7 +82,7 @@ int init_nameserver()
 int nbb_init_service(int num_channels, const char* name) 
 {
   char request[MAX_MSG_LEN] = {};
-  char num_channel[2]; // TODO: Make it constants?
+  char num_channel[CHANNEL_MAX_STRLEN];
   char pid[PID_MAX_STRLEN + 1];
 
   assert(num_channels > 0 && name != NULL);
@@ -125,7 +125,6 @@ int nbb_init_service(int num_channels, const char* name)
     return -1;
   }
   else {
-    printf("recv (%d): %.*s\n", recv_len, recv_len, recv);
     printf("** Acquired the following channels: %.*s\n", recv_len, recv);
 
     int i;
@@ -136,7 +135,6 @@ int nbb_init_service(int num_channels, const char* name)
     for(i = 1;i <= num_channels;i++) { 
       channel = atoi(tmp);
       if(nbb_open_channel(name, channel, channel + READ_WRITE_CONV, IPC_CREAT) == -1) {
-        //TODO: service_exit();
         printf("! nbb_init_service(): Failed to open the %d-th channel\n", i);
         sem_post(sem_id);
         free(recv);
@@ -255,7 +253,6 @@ void nbb_set_cb_new_connection(const char* owner, cb_new_conn_func func, void* a
     if(channel_list[i].owner && !strcmp(owner, channel_list[i].owner)) {
       channel_list[i].new_conn = func;
       channel_list[i].arg = arg;
-      printf("***NBB***: Set new_conn callback for '%s'\n", owner);
     }
   }
 }
@@ -283,7 +280,6 @@ void nbb_set_owner(int slot_id, const char *owner)
   assert(owner != NULL && "Invalid owner");
 
   if (channel_list[slot_id].owner != NULL) {
-    printf("***nbb_set_owner***: Old owner: '%s'\n", channel_list[slot_id].owner);
     free(channel_list[slot_id].owner);
   }
 
@@ -296,7 +292,6 @@ void nbb_set_owner(int slot_id, const char *owner)
 
 int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 {
-  //printf("** nbb_write_bytes() read shmid: %d, write shmid: %d,  msg: %s, msg_len: %d\n", channel_list[slot_id].read_id, channel_list[slot_id].write_id, msg, (int) msg_len);
   assert(msg != NULL);
 
   if (msg_len == 0) {
@@ -309,16 +304,12 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
   nbb_insert_item(slot_id, msg, msg_len); 
   kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
 
-  //printf("** nbb_write_bytes() Sent kill to %d\n", connected_nodes[slot_id].pid);
-
   return 0;
-
 }
 
 int nbb_send(const char* destination, const char* msg, size_t msg_len)
 {
   int i;
-  // int retval;
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1; i < SERVICE_MAX_CHANNELS;i++) {
@@ -329,7 +320,6 @@ int nbb_send(const char* destination, const char* msg, size_t msg_len)
   }
 
   return nbb_write_bytes(i, msg, msg_len);
-
 }
 
 /* Called when the service gets new client data */
@@ -339,12 +329,10 @@ void nbb_recv_data(int signum)
   char* recv;
   size_t recv_len = 0;
   int retval = -1;
-  // char* reply_msg;
   int is_new_conn_msg = 0;
 
   // Attempt to debug Qt. XXX: Remove when done.
   printf("***NBB***: Inside signal handler\n");
-
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1;channel_list[i].in_use && i < SERVICE_MAX_CHANNELS;i++) {
@@ -392,14 +380,6 @@ void nbb_recv_data(int signum)
       if (!is_new_conn_msg && channel_list[i].new_data != NULL) {
         channel_list[i].new_data(i);
       }
-
-
-      // XXX: This is for debugging. Remove before production.
-      // Reply message
-      /* reply_msg = (char*)calloc(recv_len, sizeof(char));
-      memcpy(reply_msg, recv, recv_len);
-      nbb_insert_item(i, reply_msg, recv_len);
-      free(reply_msg); */
 
       recv_len = 0; 
       free(recv);
@@ -483,10 +463,9 @@ int nbb_open_channel(const char* owner, int shm_read_id, int shm_write_id, int i
   return free_slot;
 }
 
+//TODO: Most probably buggy
 int nbb_close_channel(int index)
 {
-  //TODO: Most probably buggy, needs to be checked some more
-
   assert(index >= 0 && index < SERVICE_MAX_CHANNELS);
 
   shmdt((char*)channel_list[index].read);
@@ -524,7 +503,6 @@ int nbb_read_bytes(int slot, char* buf, int size)
   assert(slot >= 0 && buf != NULL && size >= 0);
 
   delay_buffer_t* delay_buffer = &(delay_buffers[slot]);
-  //printf("***NBB***: Delay buffer %d: %d/%d\n", slot, delay_buffer->len, delay_buffer->capacity);
   assert(delay_buffer->capacity >= delay_buffer->len);
 
   // Attempt to read 0 bytes or buffer has nothing to read
@@ -555,7 +533,6 @@ int nbb_read_bytes(int slot, char* buf, int size)
 
 int nbb_bytes_available(int slot)
 {
-  //printf("slot: %d\n", slot);
   assert(slot >= 0 && slot < SERVICE_MAX_CHANNELS);
   return delay_buffers[slot].len;
 }
@@ -596,9 +573,6 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   // Append new data to the end (or beginning if it's the first flush)
   memcpy(buffer->content + buffer->len, array_to_flush, size);
   buffer->len = new_size;
-
-  //printf("** Intermediate buffer content: '%.*s' (%d bytes)\n",
-  //       buffer->len, buffer->content, buffer->len);
 }
 
 int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size)
@@ -665,11 +639,6 @@ int nbb_insert_item(int channel_id, const void* ptr_to_item, size_t size)
   // Done writing
   buf->update_counter = buf->last_update_counter + 2;
 
-  // Also increment the recycle counter if it's in step w/ update_counter
-  //if(recycle_counter == last_update_counter) {
-  //	recycle_counter = update_counter;
-  //}
-
   buf->last_update_counter = buf->update_counter;
  
   if(memcmp(NEW_CONN_NOTIFY_MSG, ptr_to_item, sizeof(NEW_CONN_NOTIFY_MSG))) {
@@ -718,8 +687,6 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
   memcpy(*ptr_to_item, data_buf+tmp->offset, tmp->size);
 	*size = tmp->size;
 
-  //printf("nbb_read_item ret pointer %x\n", ref_to_item);
-  //printf("nbb_read_item ret pointer %x -> %d\n", ref_to_item, *ref_to_item);
   buf->ack_counter = buf->last_ack_counter + 2;
   buf->last_ack_counter = buf->ack_counter;
 
@@ -729,16 +696,13 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
 volatile handle_events_func handler_func;
 
 int nbb_set_handle_events(handle_events_func newfunc) {
-    printf("nbb_set_handle_events func is %d %p %p\n", getpid(), &handler_func, handler_func);
-    if(handler_func == NULL) {
-        handler_func = newfunc;
-        printf("==== nbb_set_handle_events %p %p\n", &handler_func, handler_func);
-    }
+    handler_func = newfunc;
+    printf("==== nbb_set_handle_events %p %p\n", &handler_func, handler_func);
+
     return 0;
 }
 
 int nbb_handle_events() {
-    printf("nbb_handle_events func is %d %p %p\n", getpid(), &handler_func, handler_func);
     if(handler_func != NULL) {
         printf("==== nbb_handle_events calling %p %p\n", &handler_func, handler_func);
         return handler_func();
