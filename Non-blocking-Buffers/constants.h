@@ -2,11 +2,12 @@
 #define CONSTANTS_H
 
 // TODO: Set dynamically
-#define SERVICE_MAX_CHANNELS 15 // Total # of channels / service
+#define SERVICE_MAX_CHANNELS 20 // Total # of channels / service
 #define PROCESS_MAX_SERVICES 500 // Total # of services / process
 #define MAX_MSG_LEN 1000 
 #define READ_WRITE_CONV 1000 // Read id always differ by 1000 from write id 
 #define SEM_KEY "/1337" // POSIX semaphore identifier to be used by everyone
+#define NAMESERVER_SLOT 0 // Nameserver will always communicate in this slot
 
 #define NBB_SIGNAL SIGRTMAX
 

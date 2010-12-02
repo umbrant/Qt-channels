@@ -9,7 +9,7 @@
 //TODO: Anything could be automated?
 #define NUM_CONNECTION_TYPE 2 // Server & client only for now
 #define NUM_SERVICES 5 // # of services this nameserver could hold
-#define TOTAL_CHANNELS 50 //Total # of channels that could be opened
+#define TOTAL_CHANNELS 100 //Total # of channels that could be opened
 
 typedef struct service
 {
