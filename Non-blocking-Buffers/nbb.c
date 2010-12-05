@@ -736,7 +736,7 @@ static int nbb_read_item_r(int channel_id, void* item, size_t* size, size_t max_
   }
 
   if (temp_uc == buf->last_ack_counter) {
-    return BUFFER_EMPTY;
+    return BUFFER_EMPTY; 
   }
 
   if ((temp_uc - buf->last_ack_counter) == 1) {
@@ -746,7 +746,7 @@ static int nbb_read_item_r(int channel_id, void* item, size_t* size, size_t max_
   buf->ack_counter = buf->last_ack_counter + 1;
 
   // Copy out the value to malloc'd mem in our address space
-  struct channel_item* tmp =
+  struct channel_item* tmp = 
 				&(buf->items[((buf->last_ack_counter / 2) % BUFFER_SIZE)]);
 
   // Copy to this item
