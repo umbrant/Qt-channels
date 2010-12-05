@@ -1,7 +1,7 @@
 CFLAGS=-Wall -g -ggdb -DDEBUG
 CC=gcc
 
-all: service client nameserver_main
+all: service client nameserver_main stress_service stress_client
 	rm -rf *.o
 
 service: nbb.o libnbb.a service.c
@@ -9,6 +9,12 @@ service: nbb.o libnbb.a service.c
 
 client: nbb.o libnbb.a client.c
 	$(CC) $(CFLAGS) client.c -o client -L. -lnbb -lrt 
+
+stress_service: nbb.o libnbb.a stress_service.c
+	$(CC) $(CFLAGS) stress_service.c -o stress_service -L. -lnbb -lrt
+
+stress_client: nbb.o libnbb.a stress_client.c
+	$(CC) $(CFLAGS) stress_client.c -o stress_client -L. -lnbb -lrt 
 
 nameserver_main: libnbb.a libnameserver.a nameserver_main.c
 	$(CC) $(CFLAGS) nameserver_main.c -o nameserver -L. -lnbb -lnameserver -lrt 

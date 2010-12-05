@@ -331,6 +331,7 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         assert(self_pipe[READ_END] >= 0 && self_pipe[READ_END] < FD_SETSIZE);
         // Do our own self-pipe trick
         FD_SET(self_pipe[READ_END], &sn_vec[0].select_fds);
+        highest = qMax(highest, self_pipe[READ_END]);
 
         FD_SET(thread_pipe[0], &sn_vec[0].select_fds);
         highest = qMax(highest, thread_pipe[0]);

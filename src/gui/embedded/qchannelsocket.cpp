@@ -150,7 +150,7 @@ qint64 QChannelSocket::readData(char * data, qint64 maxSize)
     printf("readData (%p) (bytes: %d): ", this, bytes);
     int i;
     for(i=0; i<bytes; i++) {
-        printf("%02x ", data[i]);
+        printf("%02x ", (unsigned char)data[i]);
     }
     printf("\n");
 
@@ -170,7 +170,7 @@ qint64 QChannelSocket::writeData(const char * data, qint64 maxSize)
     printf("writeData (%p) (bytes: %d): ", this, maxSize);
     int i;
     for(i=0; i<maxSize; i++) {
-        printf("%02x ", data[i]);
+        printf("%02x ", (unsigned char)data[i]);
     }
     printf("\n");
 
