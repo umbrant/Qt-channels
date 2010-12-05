@@ -37,6 +37,10 @@ extern "C" {
 // This should be dynamic in the future
 #define PAGE_SIZE (4096 * 4) // This should probably be found programatically
 
+// For connected_node struct
+// This applies to service name, client name, and so on...
+// We hardcode the name size so that we don't have to malloc() in signal handler
+#define MAX_NAME_SIZE (128)
 
 // Betting that it's some kind of malloc/mem allocation error...
 //
@@ -70,8 +74,8 @@ void nbb_set_cb_new_data(const char* owner, cb_new_data_func func);
 void nbb_set_owner(int slot_id, const char *owner);
 
 struct connected_node {
-  char* name;
   int pid;
+  char name[MAX_NAME_SIZE];
 };
 
 // Simple channel abstraction
