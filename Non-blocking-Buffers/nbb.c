@@ -18,6 +18,13 @@ sem_t *sem_id;   // POSIX semaphore
 #define NEW_CONN_NOTIFY_MSG "**Q_Q**"
 #define NEW_CONN_NOTIFY_MSG_LEN (sizeof(NEW_CONN_NOTIFY_MSG) - 1)
 
+// Re-entrant version of nbb_read_item for use only in signal handler
+// 16KB should be enough for 1 read at a time in the signal handler
+#define signal_handler_buffer_size (1<<14)
+static char signal_handler_buffer[signal_handler_buffer_size];
+static int nbb_read_item_r(int channel_id, void* item, size_t* size, size_t max_size);
+
+
 int nbb_nameserver_connect(const char* request, char** ret, int* ret_len)
 {
   int nameserver_pid = 0;
@@ -209,10 +216,11 @@ int nbb_connect_service(const char* client_name, const char* service_name)
 
     slot = nbb_open_channel(client_name, channel_id + READ_WRITE_CONV, channel_id, !IPC_CREAT);
 
-    connected_nodes[slot].name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
+    //connected_nodes[slot].name = (char*)malloc(sizeof(char)*MAX_MSG_LEN);
+    assert(strlen(service_name) + 1 <= MAX_NAME_SIZE);
     strcpy(connected_nodes[slot].name, service_name);
     connected_nodes[slot].pid = service_pid;
-   
+
     ret_code = slot;
 
     sprintf(pid, "%d", getpid());
@@ -326,7 +334,8 @@ int nbb_send(const char* destination, const char* msg, size_t msg_len)
 void nbb_recv_data(int signum)
 {
   int i;
-  char* recv;
+  char* recv = signal_handler_buffer;
+  size_t recv_max_len = signal_handler_buffer_size;
   size_t recv_len = 0;
   int retval = -1;
   int is_new_conn_msg = 0;
@@ -336,11 +345,12 @@ void nbb_recv_data(int signum)
 
   // Since i = 0 is already reserved for nameserver
   for(i = 1;channel_list[i].in_use && i < SERVICE_MAX_CHANNELS;i++) {
-    retval = nbb_read_item(i, (void**)&recv, &recv_len);
+    // Use re-entrant version of nbb_read_item
+    retval = nbb_read_item_r(i, (void*) recv, &recv_len, recv_max_len);
 
     if(retval == OK) {
-      if (memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN) == 0) {       
-        recv = (char*)realloc(recv, recv_len + 1);
+      if (memcmp(recv, NEW_CONN_NOTIFY_MSG, NEW_CONN_NOTIFY_MSG_LEN) == 0) {
+        // We have enough buffer for this null byte
         recv[recv_len] = '\0';
 
         char* tmp = NULL;
@@ -349,9 +359,9 @@ void nbb_recv_data(int signum)
         tmp = strtok(NULL, " ");
         connected_nodes[i].pid = atoi(tmp);
         tmp = strtok(NULL, " ");
-        connected_nodes[i].name = (char*)malloc(strlen(tmp) * sizeof(char));
+        //connected_nodes[i].name = (char*)malloc(strlen(tmp) * sizeof(char));
+        assert(strlen(tmp) + 1 <= MAX_NAME_SIZE);
         strcpy(connected_nodes[i].name, tmp);
-
 
         printf("***NBB***: New connection on slot %d from client_name: %s with pid: %d\n", i, connected_nodes[i].name, connected_nodes[i].pid);
 
@@ -365,10 +375,9 @@ void nbb_recv_data(int signum)
       printf("** Received %zu bytes: ", recv_len);
       int z;
       for(z=0; z<recv_len; z++) {
-        printf("%02x", recv[z]);
+        printf("%02x ", (unsigned char) recv[z]);
       }
       printf(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
-
 
       // Notify of new connection on slot i
       if (is_new_conn_msg && channel_list[i].new_conn != NULL) {
@@ -382,7 +391,6 @@ void nbb_recv_data(int signum)
       }
 
       recv_len = 0; 
-      free(recv);
     }
 
   }
@@ -695,6 +703,56 @@ int nbb_read_item(int channel_id, void** ptr_to_item, size_t* size)
 				&(buf->items[((buf->last_ack_counter / 2) % BUFFER_SIZE)]);
   *ptr_to_item = malloc(tmp->size);
   memcpy(*ptr_to_item, data_buf+tmp->offset, tmp->size);
+	*size = tmp->size;
+
+  buf->ack_counter = buf->last_ack_counter + 2;
+  buf->last_ack_counter = buf->ack_counter;
+
+  return OK;
+}
+
+// nbb_read_item_r is the re-entrant version of nbb_read_item.
+// This version has no malloc() and uses global data for ptr_to_item;
+// therefore, it must be used only in the signal handler
+static int nbb_read_item_r(int channel_id, void* item, size_t* size, size_t max_size)
+{
+	struct buffer *buf = channel_list[channel_id].read;
+	unsigned char *data_buf = channel_list[channel_id].read_data;
+  unsigned short temp_uc = buf->update_counter;
+
+  assert(channel_id >= 0 && channel_id < SERVICE_MAX_CHANNELS);
+  assert(item != NULL && size != NULL && max_size > 0);
+
+  *size = 0;
+
+  if(channel_id < 0) {
+    printf("! nbb_read_item(): invalid channel_id %d\n", channel_id);
+    return -1;
+  }
+
+  if(size < 0) {
+    printf("! nbb_read_item(): invalid size %lu\n", *size);
+    return -1;
+  }
+
+  if (temp_uc == buf->last_ack_counter) {
+    return BUFFER_EMPTY; 
+  }
+
+  if ((temp_uc - buf->last_ack_counter) == 1) {
+    return BUFFER_EMPTY_PRODUCER_INSERTING;
+  }
+
+  buf->ack_counter = buf->last_ack_counter + 1;
+
+  // Copy out the value to malloc'd mem in our address space
+  struct channel_item* tmp = 
+				&(buf->items[((buf->last_ack_counter / 2) % BUFFER_SIZE)]);
+
+  // Copy to this item
+  // Make sure we have enough buffer size for the message and null byte
+  assert(tmp->size < max_size);
+  memcpy(item, data_buf+tmp->offset, tmp->size);
 	*size = tmp->size;
 
   buf->ack_counter = buf->last_ack_counter + 2;
