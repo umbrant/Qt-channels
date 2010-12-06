@@ -230,13 +230,15 @@ int nbb_connect_service(const char* client_name, const char* service_name)
     strcat(msg, " ");
     strcat(msg, client_name);
 
+    // Have to set up the signal handler before we connect to the service
+    // Ran into this condition under heavy load
+    signal(NBB_SIGNAL, nbb_recv_data);
     // Notify service of the new connection
     if (nbb_send(service_name, msg, strlen(msg))) {
       PRINTF("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     } else {
       PRINTF("** Connecting to service successful, channel: %d service pid: %d\n", channel_id, service_pid);
-      signal(NBB_SIGNAL, nbb_recv_data);
     }
   }
 

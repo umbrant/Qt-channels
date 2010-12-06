@@ -46,6 +46,7 @@
 #include "qsocketnotifier.h"
 #include "qthread.h"
 #include "qelapsedtimer.h"
+#include <QDebug>
 
 #include "qeventdispatcher_unix_p.h"
 #include <private/qthread_p.h>
@@ -152,7 +153,7 @@ Q_CORE_EXPORT self_pipe_func signal_self_pipe_func;
 
 Q_CORE_EXPORT void signal_self_pipe(void)
 {
-    printf("signal_self_pipe called.\n");
+    //qDebug() << "signal_self_pipe called.";
     assert(self_pipe_initialized);
 
     char c = 1;
@@ -181,8 +182,6 @@ Q_CORE_EXPORT void signal_self_pipe(void)
         printf("***signal_self_pipe: Can't self-pipe...\n");
         assert(false);
     }
-
-    printf("%s is called...\n", __func__);
 }
 
 
@@ -346,7 +345,7 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         // on the the return value of select().
         if (nsel > 0 && FD_ISSET(self_pipe[READ_END], &sn_vec[0].select_fds)) {
             // Comment this out when it works...
-            printf("%s: Got input from self-pipe...\n", __func__);
+            qDebug() << __func__ << ": Got input from self-pipe...";
 
             // Consume all the bytes in the self-pipe and call handle events
             // read() is non-blocking as set above
@@ -370,7 +369,7 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
             }
 
             // We finished consuming bytes from the self pipe
-            printf("** qeventdispatcher right before handle_event\n");
+            //printf("** qeventdispatcher right before handle_event\n");
             nbb_handle_events();
 
             nsel--;

@@ -195,15 +195,12 @@ int QEventLoop::exec(ProcessEventsFlags flags)
 
 #if defined(QT_NO_EXCEPTIONS)
     while (!d->exit) {
-        printf("** qeventloop() 1 right before handle_events\n");
-        //nbb_handle_events();
+        //printf("** qeventloop() 1 right before handle_events\n");
         processEvents(flags | WaitForMoreEvents | EventLoopExec);
     }
 #else
     try {
         while (!d->exit) {
-            printf("** qeventloop() 2 right before handle_events\n");
-            //nbb_handle_events();
             processEvents(flags | WaitForMoreEvents | EventLoopExec);
         }
     } catch (...) {
