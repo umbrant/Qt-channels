@@ -1,23 +1,15 @@
 CFLAGS=-Wall -g -ggdb #-DDEBUG
+LIBS=-L. -lnbb -lrt -lnameserver
 CC=gcc
 
-all: service client nameserver_main stress_service stress_client
+all: nameserver_main
 	rm -rf *.o
 
-service: nbb.o libnbb.a service.c
-	$(CC) $(CFLAGS) service.c -o service -L. -lnbb -lrt
-
-client: nbb.o libnbb.a client.c
-	$(CC) $(CFLAGS) client.c -o client -L. -lnbb -lrt 
-
-stress_service: nbb.o libnbb.a stress_service.c
-	$(CC) $(CFLAGS) stress_service.c -o stress_service -L. -lnbb -lrt
-
-stress_client: nbb.o libnbb.a stress_client.c
-	$(CC) $(CFLAGS) stress_client.c -o stress_client -L. -lnbb -lrt 
-
 nameserver_main: libnbb.a libnameserver.a nameserver_main.c
-	$(CC) $(CFLAGS) nameserver_main.c -o nameserver -L. -lnbb -lnameserver -lrt 
+	$(CC) $(CFLAGS) nameserver_main.c -o nameserver $(LIBS)
+
+debug: service client nameserver_main stress_service stress_client
+  CFLAGS=-Wall -g -ggdb -DDEBUG
 
 # shared library
 libnbb.so.1.0.1: nbb.c
