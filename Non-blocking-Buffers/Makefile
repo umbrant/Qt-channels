@@ -1,4 +1,5 @@
-CFLAGS=-Wall -g -ggdb #-DDEBUG
+CFLAGS=-Wall -g -ggdb 
+#CFLAGS += -DDEBUG
 LIBS=-L. -lnbb -lrt -lnameserver
 CC=gcc
 
@@ -7,9 +8,6 @@ all: nameserver_main
 
 nameserver_main: libnbb.a libnameserver.a nameserver_main.c
 	$(CC) $(CFLAGS) nameserver_main.c -o nameserver $(LIBS)
-
-debug: service client nameserver_main stress_service stress_client
-  CFLAGS=-Wall -g -ggdb -DDEBUG
 
 # shared library
 libnbb.so.1.0.1: nbb.c
