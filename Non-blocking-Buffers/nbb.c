@@ -783,3 +783,10 @@ int nbb_handle_events() {
     }
     return 0;
 }
+
+void nbb_print_timestamp() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    unsigned long long nsec = ts.tv_nsec + (1000000000*ts.tv_sec);
+    fprintf(stderr, "Timestamp: %lld", nsec);
+}

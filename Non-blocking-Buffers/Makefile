@@ -27,10 +27,12 @@ libnbb.a: nbb.o
 libnameserver.a: nameserver.o 
 	ar rcs libnameserver.a nameserver.o
 
-nbb.o: nbb.c nbb.h
-	$(CC) $(CFLAGS) -c -fPIC nbb.c -S -o nbb.s
+nbb.o: nbb.s
+	$(CC) $(CFLAGS) -c -fPIC nbb.s -lrt
+
+nbb.s: nbb.c nbb.h
+	$(CC) $(CFLAGS) -c -fPIC nbb.c -S -o nbb.s -lrt
 	sed -i "s/__sysv_signal/signal/" nbb.s
-	$(CC) $(CFLAGS) -c -fPIC nbb.s
 
 nameserver.o: nameserver.c nameserver.h 
 	$(CC) $(CFLAGS) -c nameserver.c
