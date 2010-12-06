@@ -106,7 +106,7 @@ int nbb_init_service(int num_channels, const char* name)
   sprintf(num_channel, "%d", num_channels);
   sprintf(pid, "%d", getpid());
 
-  strcpy(request, SERVICE);
+  strcpy(request, NBB_SERVICE);
   strcat(request, " ");
   strcat(request, name);
   strcat(request, " ");
@@ -176,7 +176,7 @@ int nbb_connect_service(const char* client_name, const char* service_name)
   // BEGIN CRITICAL SECTION
   sem_wait(sem_id);
 
-  strcpy(request, CLIENT);
+  strcpy(request, NBB_CLIENT);
   strcat(request, " ");
   strcat(request, service_name);
 
@@ -230,13 +230,15 @@ int nbb_connect_service(const char* client_name, const char* service_name)
     strcat(msg, " ");
     strcat(msg, client_name);
 
+    // Have to set up the signal handler before we connect to the service
+    // Ran into this condition under heavy load
+    signal(NBB_SIGNAL, nbb_recv_data);
     // Notify service of the new connection
     if (nbb_send(service_name, msg, strlen(msg))) {
       PRINTF("! nbb_connect_service(): Can't notify service '%s' of new connection\n", service_name);
       ret_code = -1;
     } else {
       PRINTF("** Connecting to service successful, channel: %d service pid: %d\n", channel_id, service_pid);
-      signal(NBB_SIGNAL, nbb_recv_data);
     }
   }
 
@@ -780,4 +782,11 @@ int nbb_handle_events() {
         PRINTF("==== nbb_handle_events called, but no function set!\n");
     }
     return 0;
+}
+
+void nbb_print_timestamp(char* str) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    unsigned long long nsec = ts.tv_nsec + (1000000000*ts.tv_sec);
+    fprintf(stderr, "Timestamp from %s: %lld\n", str, nsec);
 }

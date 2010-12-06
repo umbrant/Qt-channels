@@ -1,4 +1,4 @@
-#include "nbb.h"
+#include "../nbb.h"
 
 #define NUM_CHANNELS 5 
 

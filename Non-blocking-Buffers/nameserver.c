@@ -30,7 +30,7 @@ void data_available(int signum)
 
 void handle_client(char* arg)
 {
-  printf("\n** Handling client\n");
+  PRINTF("\n** Handling client\n");
 
   char* msg = (char*)malloc(50*sizeof(char));
   int service_id;
@@ -39,7 +39,7 @@ void handle_client(char* arg)
   service_id = find_service(arg);
 
   if(service_id == -1) {
-    printf("** Unable to find service: %s\n", arg);
+   PRINTF("** Unable to find service: %s\n", arg);
     strcpy(msg, UNKNOWN_SERVICE);
 
     nbb_insert_item(CHANNEL_ID, msg, strlen(msg));
@@ -47,11 +47,11 @@ void handle_client(char* arg)
     return;
   }
 
-  printf("** Able to find service: %s\n", arg);
+ PRINTF("** Able to find service: %s\n", arg);
 
   channel_id = bind_client_service(service_id);
   if(channel_id == -1) {
-    printf("** Service has no channel free\n");
+   PRINTF("** Service has no channel free\n");
     strcpy(msg, SERVICE_BUSY);
 
     nbb_insert_item(CHANNEL_ID, msg, strlen(msg));
@@ -59,7 +59,7 @@ void handle_client(char* arg)
     return;
   }
 
-  printf("** Service could accept connection\n");
+ PRINTF("** Service could accept connection\n");
 
   char tmp[2]; 
   sprintf(tmp, "%d", service_lists[service_id].pid); 
@@ -75,7 +75,7 @@ void handle_client(char* arg)
 
 void handle_service(char* arg)
 {
-  printf("** Handling service\n");
+ PRINTF("** Handling service\n");
 
   char* service_name = strtok(arg, " ");
   int num_channels = atoi(strtok(NULL, " "));
@@ -97,14 +97,14 @@ void handle_service(char* arg)
   service_lists[slot].is_channel_busy = (int*)calloc(num_channels,sizeof(int));
   service_lists[slot].pid = service_pid;
 
-  printf("** Name: %s, num_channel:%d, pid: %d\n", service_lists[slot].name, num_channels, service_pid);
+ PRINTF("** Name: %s, num_channel:%d, pid: %d\n", service_lists[slot].name, num_channels, service_pid);
 
   if(reserve_channel(slot)) { 
-    printf("** Unable to reserve %d channels\n", num_channels);
+   PRINTF("** Unable to reserve %d channels\n", num_channels);
     strcpy(msg, NAMESERVER_CHANNEL_FULL);
   }
   else {
-    printf("** Able to reserve %d channels\n", num_channels);
+   PRINTF("** Able to reserve %d channels\n", num_channels);
     for(i = 0;i < service_lists[slot].num_channels;i++) {
       char tmp[5] = "\0"; 
       sprintf(tmp, "%d", service_lists[slot].channel_ids[i]);

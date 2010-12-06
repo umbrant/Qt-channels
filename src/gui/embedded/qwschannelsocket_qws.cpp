@@ -150,7 +150,7 @@ static int socket_handle_events() {
     return 0;
 }
 
-// Called in the event loop to clear out new data
+// Signal handler function
 static void client_on_new_available_data(int slot_id) {
     g_clientSocketMap[slot_id].has_data = true;
 
@@ -159,6 +159,7 @@ static void client_on_new_available_data(int slot_id) {
     (signal_self_pipe)();
 }
 
+// Called in the event loop to clear out new data
 void client_handle_new_available_data(int slot_id)
 {
     QWSChannelSocket *socket = g_clientSocketMap[slot_id].csocket;

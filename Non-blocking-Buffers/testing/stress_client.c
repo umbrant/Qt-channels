@@ -1,4 +1,4 @@
-#include "nbb.h"
+#include "../nbb.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>

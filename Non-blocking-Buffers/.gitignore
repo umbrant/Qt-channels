@@ -6,3 +6,5 @@ client
 service
 nameserver
 nameserver_pid
+stress_client
+stress_service

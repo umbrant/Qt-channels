@@ -2,9 +2,9 @@
 
 embedded {
 	CONFIG -= opengl x11
-	LIBS -= -dl -lrt
+	LIBS -= -dl 
 	KERNEL_P        = kernel
-    LIBS += -ldl
+    LIBS += -ldl -lrt
 
 	!mac:HEADERS += embedded/qsoundqss_qws.h
 	HEADERS += \

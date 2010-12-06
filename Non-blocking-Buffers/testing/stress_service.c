@@ -1,4 +1,4 @@
-#include "nbb.h"
+#include "../nbb.h"
 
 #include <stdio.h>
 #include <unistd.h>

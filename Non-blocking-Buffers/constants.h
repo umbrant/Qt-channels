@@ -29,8 +29,8 @@ static const char NAMESERVER_CHANNEL_FULL[] = "Nameserver Full";
 static const char UNKNOWN_SERVICE[] = "Unknown Service";
 static const char SERVICE_BUSY[] = "Service Too Busy";
 
-static const char SERVICE[] = "0";
-static const char CLIENT[] = "1";
-static const char GUI[] = "GUI";
+static const char NBB_SERVICE[] = "0";
+static const char NBB_CLIENT[] = "1";
+static const char NBB_GUI[] = "GUI";
 
 #endif // CONSTANTS_H

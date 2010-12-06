@@ -1,9 +1,14 @@
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 #ifndef NBB_H
 #define NBB_H
+
+// This doesn't work below XOPEN_SOURCE...doh
+#include <time.h>
 
 // Necessary for sys/ipc.h
 #ifndef _XOPEN_SOURCE
@@ -183,6 +188,8 @@ extern volatile handle_events_func handler_func;
 
 int nbb_handle_events();
 int nbb_set_handle_events(handle_events_func);
+
+void nbb_print_timestamp(char* str);
 
 
 #endif // NBB_H

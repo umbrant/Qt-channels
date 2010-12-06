@@ -1,4 +1,4 @@
-#include "nbb.h"
+#include "../nbb.h"
 #include <assert.h>
 
 int main() 
@@ -16,7 +16,7 @@ int main()
   char* array = (char*)malloc(sizeof(char) * MAX_MSG_LEN);
   int array_size = MAX_MSG_LEN;
 
-  strcpy(service_name, NBB_GUI);
+  strcpy(service_name, GUI);
   strcpy(service_name_other, "GUI2");
 
   strcpy(client_name, "Client");
