@@ -30,6 +30,12 @@ extern "C" {
 
 #include "constants.h"
 
+#ifdef DEBUG
+  #define PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define PRINTF(...)
+#endif
+
 // BUFFER_SIZE is limited to ~32,767 since it has to be represented by an unsigned short / 2
 #define BUFFER_SIZE (256 * 4)
 #define NUM_ITEMS 500000

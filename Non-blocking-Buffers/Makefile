@@ -1,4 +1,4 @@
-CFLAGS=-Wall -g -ggdb
+CFLAGS=-Wall -g -ggdb -DDEBUG
 CC=gcc
 
 all: service client nameserver_main stress_service stress_client
