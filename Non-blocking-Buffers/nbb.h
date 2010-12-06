@@ -189,7 +189,7 @@ extern volatile handle_events_func handler_func;
 int nbb_handle_events();
 int nbb_set_handle_events(handle_events_func);
 
-void nbb_print_timestamp();
+void nbb_print_timestamp(char* str);
 
 
 #endif // NBB_H

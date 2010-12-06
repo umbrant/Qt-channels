@@ -106,7 +106,7 @@ int nbb_init_service(int num_channels, const char* name)
   sprintf(num_channel, "%d", num_channels);
   sprintf(pid, "%d", getpid());
 
-  strcpy(request, SERVICE);
+  strcpy(request, NBB_SERVICE);
   strcat(request, " ");
   strcat(request, name);
   strcat(request, " ");
@@ -176,7 +176,7 @@ int nbb_connect_service(const char* client_name, const char* service_name)
   // BEGIN CRITICAL SECTION
   sem_wait(sem_id);
 
-  strcpy(request, CLIENT);
+  strcpy(request, NBB_CLIENT);
   strcat(request, " ");
   strcat(request, service_name);
 
@@ -784,9 +784,9 @@ int nbb_handle_events() {
     return 0;
 }
 
-void nbb_print_timestamp() {
+void nbb_print_timestamp(char* str) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     unsigned long long nsec = ts.tv_nsec + (1000000000*ts.tv_sec);
-    fprintf(stderr, "Timestamp: %lld", nsec);
+    fprintf(stderr, "Timestamp from %s: %lld", str, nsec);
 }

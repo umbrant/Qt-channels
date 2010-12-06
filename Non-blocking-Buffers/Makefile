@@ -27,15 +27,13 @@ libnbb.a: nbb.o
 libnameserver.a: nameserver.o 
 	ar rcs libnameserver.a nameserver.o
 
-nbb.o: nbb.s
-	$(CC) $(CFLAGS) -c -fPIC nbb.s -lrt
-
-nbb.s: nbb.c nbb.h
+nbb.o: nbb.c nbb.h
 	$(CC) $(CFLAGS) -c -fPIC nbb.c -S -o nbb.s -lrt
 	sed -i "s/__sysv_signal/signal/" nbb.s
+	$(CC) $(CFLAGS) -c -fPIC nbb.s -lrt
 
 nameserver.o: nameserver.c nameserver.h 
 	$(CC) $(CFLAGS) -c nameserver.c
 
 clean:
-	rm -rf *.o nbb_multi libnbb.so.1.0.1 *.a client nameserver service
+	rm -rf *.o nbb_multi libnbb.so.1.0.1 *.a client nameserver service nbb.s stress_client stress_service
