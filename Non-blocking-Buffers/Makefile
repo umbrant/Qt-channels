@@ -44,4 +44,4 @@ nameserver.o: nameserver.c nameserver.h
 	$(CC) $(CFLAGS) -c nameserver.c
 
 clean:
-	rm -rf *.o nbb_multi libnbb.so.1.0.1 *.a client nameserver service
+	rm -rf *.o nbb_multi libnbb.so.1.0.1 *.a client nameserver service stress_service stress_client
