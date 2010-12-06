@@ -372,12 +372,14 @@ void nbb_recv_data(int signum)
         nbb_flush_shm(i, recv, recv_len);
       }
 
+      /*
       PRINTF("** Received %zu bytes: ", recv_len);
       int z;
       for(z=0; z<recv_len; z++) {
         PRINTF("%02x", recv[z]);
       }
       PRINTF(" from shm id %d slot %d\n", (int) channel_list[i].read_id, i);
+      */
 
       // Notify of new connection on slot i
       if (is_new_conn_msg && channel_list[i].new_conn != NULL) {
