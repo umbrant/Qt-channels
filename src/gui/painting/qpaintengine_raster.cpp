@@ -4168,6 +4168,7 @@ void QRasterPaintEnginePrivate::rasterize(QT_FT_Outline *outline,
                                       : Qt::OddEvenFill;
 
         rasterizer->rasterize(outline, fillRule);
+        // This never gets called
         nbb_print_timestamp("QRasterPaintEnginePrivate::rasterize1");
         return;
     }
@@ -4259,7 +4260,7 @@ void QRasterPaintEnginePrivate::rasterize(QT_FT_Outline *outline,
     if (rasterPoolBase != rasterPoolOnStack) // initially on the stack
         free(rasterPoolBase);
 #endif
-    nbb_print_timestamp("QRasterPaintEnginePrivate::rasterize2");
+    nbb_print_timestamp("QRasterPaintEnginePrivate::rasterize");
 }
 
 void QRasterPaintEnginePrivate::recalculateFastImages()

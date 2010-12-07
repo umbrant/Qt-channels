@@ -832,6 +832,7 @@ void QWSClient::sendEvent(QWSEvent* event)
         // qDebug() << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state();
         if ((QAbstractSocket::SocketState)(csocket->state()) == QAbstractSocket::ConnectedState) {
             std::cout << "QWSClient::sendEvent event->write(csocket)" << std::endl;
+            nbb_print_timestamp("QWSClient::sendEvent");
             event->write(csocket);
         }
     }
