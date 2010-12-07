@@ -485,6 +485,7 @@ void qt_client_enqueue(const QWSEvent *event)
     QWSEvent *copy = QWSEvent::factory(event->type);
     copy->copyFrom(event);
     incoming.append(copy);
+    nbb_print_timestamp("qt_client_enqueue");
 }
 
 QList<QWSCommand*> *qt_get_server_queue()
@@ -498,6 +499,7 @@ void qt_server_enqueue(const QWSCommand *command)
     QT_TRY {
         copy->copyFrom(command);
         outgoing.append(copy);
+        nbb_print_timestamp("qt_server_enqueue");
     } QT_CATCH(...) {
         delete copy;
         QT_RETHROW;
@@ -956,8 +958,10 @@ QWSEvent* QWSDisplay::Data::readMore()
     assert(0);
     return incoming.isEmpty() ? 0 : incoming.takeFirst();
 #else
-    if (!csocket)
+    if (!csocket) {
+        nbb_print_timestamp("readMore !csocket");
         return incoming.isEmpty() ? 0 : incoming.takeFirst();
+    }
     // read next event
     if (!current_event) {
         int event_type = qws_read_uint(csocket);
@@ -972,6 +976,7 @@ QWSEvent* QWSDisplay::Data::readMore()
             // Finished reading a whole event.
             QWSEvent* result = current_event;
             current_event = 0;
+            nbb_print_timestamp("readMore currentEvent");
             return result;
         }
     }
