@@ -224,7 +224,10 @@ int main(int argc, char **argv)
         anim->setEasingCurve(QEasingCurve::InOutBack);
         group->addAnimation(anim);
     }
-    QAbstractTransition *trans = rootState->addTransition(ellipseButton, SIGNAL(pressed()), ellipseState);
+
+    QAbstractTransition *trans;
+
+    trans = rootState->addTransition(ellipseButton, SIGNAL(pressed()), ellipseState);
     trans->addAnimation(group);
 
     trans = rootState->addTransition(figure8Button, SIGNAL(pressed()), figure8State);
@@ -239,11 +242,28 @@ int main(int argc, char **argv)
     trans = rootState->addTransition(centeredButton, SIGNAL(pressed()), centeredState);
     trans->addAnimation(group);
 
+    /*
+    trans = rootState->addTransition(ellipseState, SIGNAL(finished()), tiledState);
+    trans->addAnimation(group);
+
+    trans = rootState->addTransition(tiledState, SIGNAL(finished()), ellipseState);
+    trans->addAnimation(group);
+    */
+
     QTimer timer;
-    timer.start(125);
-    timer.setSingleShot(true);
+    timer.setInterval(4000);
+    timer.start();
+    timer.setSingleShot(false);
+
     trans = rootState->addTransition(&timer, SIGNAL(timeout()), ellipseState);
     trans->addAnimation(group);
+
+    QTimer timer2;
+    timer2.setInterval(4000);
+    trans = rootState->addTransition(&timer2, SIGNAL(timeout()), tiledState);
+    trans->addAnimation(group);
+
+    QTimer::singleShot(2000, &timer2, SLOT(start()));
 
     states.start();
 
