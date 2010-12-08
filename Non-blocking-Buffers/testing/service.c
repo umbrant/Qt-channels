@@ -21,7 +21,7 @@ int main()
   char* service_name = (char*)malloc(sizeof(char)*50);
   char* service_name_other = (char*)malloc(sizeof(char)*50);
 
-  strcpy(service_name, GUI);
+  strcpy(service_name, NBB_GUI);
   strcpy(service_name_other, "GUI2");
 
 	if(nbb_init_service(NUM_CHANNELS, service_name)) {
