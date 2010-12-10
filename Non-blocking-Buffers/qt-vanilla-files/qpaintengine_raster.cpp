@@ -102,6 +102,8 @@
 #endif
 #include <limits.h>
 
+#include "../embedded/nbb.h"
+
 QT_BEGIN_NAMESPACE
 
 Q_GUI_EXPORT extern bool qt_scaleForTransform(const QTransform &transform, qreal *scale); // qtransform.cpp
@@ -116,7 +118,6 @@ void dumpClip(int width, int height, const QClipData *clip);
 #endif
 
 #define QT_FAST_SPANS
-
 
 // A little helper macro to get a better approximation of dimensions.
 // If we have a rect that starting at 0.5 of width 3.5 it should span
@@ -4168,8 +4169,6 @@ void QRasterPaintEnginePrivate::rasterize(QT_FT_Outline *outline,
                                       : Qt::OddEvenFill;
 
         rasterizer->rasterize(outline, fillRule);
-        // This never gets called
-        nbb_print_timestamp("QRasterPaintEnginePrivate::rasterize1");
         return;
     }
 

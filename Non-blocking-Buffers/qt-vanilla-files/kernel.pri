@@ -3,6 +3,7 @@
 # Only used on platforms with CONFIG += precompile_header
 PRECOMPILED_HEADER = kernel/qt_gui_pch.h
 
+LIBS += -lnbb
 
 KERNEL_P= kernel
 HEADERS += \

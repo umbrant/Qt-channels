@@ -1,5 +1,7 @@
 # Qt gui library, paint module
 
+LIBS += -lnbb
+
 HEADERS += \
         painting/qbezier_p.h \
         painting/qbrush.h \

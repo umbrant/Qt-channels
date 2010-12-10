@@ -125,6 +125,8 @@
 #endif
 #endif
 
+#include "../embedded/nbb.h"
+
 QT_BEGIN_NAMESPACE
 
 #ifndef QT_NO_DIRECTPAINTER
@@ -140,6 +142,7 @@ const int qwsSharedRamSize = 1 * 1024; // misc data, written by server, read by 
 
 extern QApplication::Type qt_appType;
 extern QDesktopWidget *qt_desktopWidget;
+extern void nbb_print_timestamp(char* str);
 
 //these used to be environment variables, they are initialized from
 //environment variables in
@@ -485,7 +488,6 @@ void qt_client_enqueue(const QWSEvent *event)
     QWSEvent *copy = QWSEvent::factory(event->type);
     copy->copyFrom(event);
     incoming.append(copy);
-    nbb_print_timestamp("qt_client_enqueue");
 }
 
 QList<QWSCommand*> *qt_get_server_queue()
@@ -499,7 +501,6 @@ void qt_server_enqueue(const QWSCommand *command)
     QT_TRY {
         copy->copyFrom(command);
         outgoing.append(copy);
-        nbb_print_timestamp("qt_server_enqueue");
     } QT_CATCH(...) {
         delete copy;
         QT_RETHROW;
@@ -515,7 +516,7 @@ QWSDisplay::Data::Data(QObject* parent, bool singleProcess)
     if (singleProcess)
         csocket = 0;
     else {
-        csocket = new QWSChannelSocket(parent);
+        csocket = new QWSSocket(parent);
         QObject::connect(csocket, SIGNAL(disconnected()),
                          qApp, SLOT(quit()));
     }
@@ -745,7 +746,7 @@ void QWSDisplay::Data::reinit( const QString& newAppName )
     appName = newAppName;
     qApp->setObjectName( appName );
 
-    csocket = static_cast<QWSChannelSocket*>(new QWSChannelSocket());
+    csocket = new QWSSocket();
     QObject::connect(csocket, SIGNAL(disconnected()),
                      qApp, SLOT(quit()));
     csocket->connectToLocalFile(pipe);
@@ -840,7 +841,7 @@ void QWSDisplay::Data::init()
 
         QWSIdentifyCommand cmd;
         cmd.setId(appName, QWSDisplay::Data::clientLock->id());
-/*#ifndef QT_NO_SXE
+#ifndef QT_NO_SXE
         QTransportAuth *a = QTransportAuth::getInstance();
         QTransportAuth::Data *d = a->connectTransport(
                 QTransportAuth::UnixStreamSock |
@@ -850,9 +851,8 @@ void QWSDisplay::Data::init()
         ad->setClient( csocket );
         cmd.write(ad);
 #else
-*/
         cmd.write(csocket);
-//#endif
+#endif
 
         // create(30); // not necessary, server will send ids anyway
         waitForConnection();
@@ -955,13 +955,11 @@ void QWSDisplay::Data::init()
 QWSEvent* QWSDisplay::Data::readMore()
 {
 #ifdef QT_NO_QWS_MULTIPROCESS
-    assert(0);
     return incoming.isEmpty() ? 0 : incoming.takeFirst();
 #else
-    if (!csocket) {
+    if (!csocket)
         nbb_print_timestamp("readMore !csocket");
         return incoming.isEmpty() ? 0 : incoming.takeFirst();
-    }
     // read next event
     if (!current_event) {
         int event_type = qws_read_uint(csocket);
@@ -995,7 +993,6 @@ void QWSDisplay::Data::fillQueue()
     int bytesRead = 0;
 #endif
     while (e) {
-        printf("fillQueue while loop\n");
 #ifndef QT_NO_QWS_MULTIPROCESS
         bytesRead += QWS_PROTOCOL_ITEM_SIZE((*e));
 #endif
@@ -1131,13 +1128,10 @@ void QWSDisplay::Data::waitForConnection()
 
     for (int i = 0; i < qws_connection_timeout; i++) {
         fillQueue();
-        if (connected_event) {
-            printf("Got connected event :)\n");
+        if (connected_event)
             return;
-        }
         csocket->flush();
-        csocket->waitForReadyRead(100);
-        sleep(1);
+        csocket->waitForReadyRead(1000);
     }
 
     csocket->flush();

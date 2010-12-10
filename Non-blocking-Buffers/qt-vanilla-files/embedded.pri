@@ -2,9 +2,9 @@
 
 embedded {
 	CONFIG -= opengl x11
-	LIBS -= -dl 
+	LIBS -= -dl
 	KERNEL_P        = kernel
-    LIBS += -ldl -lrt
+	LIBS += -ldl -lrt -lnbb
 
 	!mac:HEADERS += embedded/qsoundqss_qws.h
 	HEADERS += \
@@ -36,12 +36,9 @@ embedded {
 		    embedded/qwsutils_qws.h \
                     embedded/qwssharedmemory_p.h \
 		    embedded/qwssignalhandler_p.h \
-		    embedded/constants.h \
-		    embedded/nbb.h \
-            embedded/qwschannelsocket_qws.h \
-		    embedded/qchannelsocket_p.h \
 		    embedded/qwsembedwidget.h
 
+	 !mac:SOURCES += embedded/qsoundqss_qws.cpp
          SOURCES +=  \
 		    embedded/qcopchannel_qws.cpp \
 		    embedded/qdecoration_qws.cpp \
@@ -63,11 +60,7 @@ embedded {
                     embedded/qwssharedmemory.cpp \
 		    embedded/qwssocket_qws.cpp \
 		    embedded/qwssignalhandler.cpp \
-		    embedded/qwsembedwidget.cpp \
-            embedded/qwschannelsocket_qws.cpp \
-		    embedded/qchannelsocket.cpp \
-			embedded/qsoundqss_qws.cpp \
-		    embedded/nbb.s
+		    embedded/qwsembedwidget.cpp
 
         contains(QT_CONFIG,sxe)|contains(QT_CONFIG,qtopia) {
             SOURCES += embedded/qunixsocket.cpp embedded/qunixsocketserver.cpp
@@ -78,7 +71,7 @@ embedded {
 # Decorations
 #
     contains( decorations, default ) {
-        HEADERS += embedded/qdecorationdefault_qws.h
+    	HEADERS += embedded/qdecorationdefault_qws.h
     	SOURCES += embedded/qdecorationdefault_qws.cpp
     }
     contains( decorations, styled ) {

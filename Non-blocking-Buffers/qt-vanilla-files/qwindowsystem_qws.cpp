@@ -87,7 +87,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <iostream>
 #include <errno.h>
 
 #ifndef QT_NO_QWS_MULTIPROCESS
@@ -106,6 +105,8 @@
 #endif
 #endif
 
+#include "nbb.h"
+
 //#define QWS_DEBUG_FONTCLEANUP
 
 QT_BEGIN_NAMESPACE
@@ -121,6 +122,7 @@ QWSScreenSaver::~QWSScreenSaver()
 {
 }
 
+extern void nbb_print_timestamp(char* str);
 extern QByteArray qws_display_spec;
 extern void qt_init_display(); //qapplication_qws.cpp
 extern QString qws_qtePipeFilename();
@@ -749,10 +751,10 @@ QWSClient::QWSClient(QObject* parent, QWS_SOCK_BASE* sock, int id)
         socketDescriptor = -1;
         isClosed = false;
     } else {
-        csocket = static_cast<QWSChannelSocket*>(sock); //###
+        csocket = static_cast<QWSSocket*>(sock); //###
         isClosed = false;
 
-        //csocket->flush();
+        csocket->flush();
         socketDescriptor = csocket->socketDescriptor();
         connect(csocket, SIGNAL(readyRead()), this, SIGNAL(readyRead()));
         connect(csocket, SIGNAL(disconnected()), this, SLOT(closeHandler()));
@@ -825,21 +827,20 @@ int QWSClient::socket() const
 */
 void QWSClient::sendEvent(QWSEvent* event)
 {
-    std::cout << "QWSClient::sendEvent" << std::endl; 
+    printf("QWSClient::sendEvent\n");
+
 #ifndef QT_NO_QWS_MULTIPROCESS
     if (csocket) {
-        std::cout << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state() << std::endl;
         // qDebug() << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state();
         if ((QAbstractSocket::SocketState)(csocket->state()) == QAbstractSocket::ConnectedState) {
-            std::cout << "QWSClient::sendEvent event->write(csocket)" << std::endl;
             nbb_print_timestamp("QWSClient::sendEvent");
             event->write(csocket);
         }
     }
     else
 #endif
-    { 
-        std::cout << "QWSClient::sendEvent qt_client_enqueue\n";
+    {
+        printf("** Event enqueued\n");
         qt_client_enqueue(event);
     }
 }
@@ -1368,17 +1369,15 @@ bool QWSServerPrivate::screensaverblockevent( int index, int *screensaverinterva
 
 void QWSServerPrivate::initServer(int flags)
 {
-    printf("QWSServerPrivate::initServer called\n");
     Q_Q(QWSServer);
     Q_ASSERT(!qwsServer);
     qwsServer = q;
     qwsServerPrivate = this;
     disablePainting = false;
-//#ifndef QT_NO_QWS_MULTIPROCESS
-    ssocket = new QWSChannelServerSocket(qws_qtePipeFilename(), q);
+#ifndef QT_NO_QWS_MULTIPROCESS
+    ssocket = new QWSServerSocket(qws_qtePipeFilename(), q);
     QObject::connect(ssocket, SIGNAL(newConnection()), q, SLOT(_q_newConnection()));
 
-    /*
     if ( !ssocket->isListening()) {
         perror("QWSServerPrivate::initServer: server socket not listening");
         qFatal("Failed to bind to %s", qws_qtePipeFilename().toLatin1().constData());
@@ -1388,11 +1387,10 @@ void QWSServerPrivate::initServer(int flags)
     tmp.l_onoff=1;
     tmp.l_linger=0;
     setsockopt(ssocket->socketDescriptor(),SOL_SOCKET,SO_LINGER,(char *)&tmp,sizeof(tmp));
-    */
+
 
     signal(SIGPIPE, ignoreSignal); //we get it when we read
-//#endif
-
+#endif
     focusw = 0;
     mouseGrabber = 0;
     mouseGrabbing = false;
@@ -1539,15 +1537,14 @@ void QWSServerPrivate::handleWindowClose(QWSWindow *w)
 */
 void QWSServerPrivate::_q_newConnection()
 {
-    printf("QWSServerPrivate::_q_newConnection() called\n");
     Q_Q(QWSServer);
     while (QWS_SOCK_BASE *sock = ssocket->nextPendingConnection()) {
         int socket = sock->socketDescriptor();
         sock->setParent(0);
 
-        QWSClient *client = new QWSClient(q, sock, get_object_id());
+        QWSClient *client = new QWSClient(q,sock, get_object_id());
         clientMap[socket] = client;
-/*
+
 #ifndef QT_NO_SXE
 #ifdef QTRANSPORTAUTH_DEBUG
         qDebug( "Transport auth connected: unix stream socket %d", socket );
@@ -1569,15 +1566,11 @@ void QWSServerPrivate::_q_newConnection()
         QObject::connect(client, SIGNAL(connectionClosed()),
                 q, SLOT(_q_clientClosed()));
 #else
-*/
-        // NOTE: This is what we care about
-        // readyRead and connectionClosed need to be emitted correctly
-        printf("_q_newConnection() readyRead for the client connected\n");
         QObject::connect(client, SIGNAL(readyRead()),
                          q, SLOT(_q_doClient()));
         QObject::connect(client, SIGNAL(connectionClosed()),
                          q, SLOT(_q_clientClosed()));
-//#endif // QT_NO_SXE
+#endif // QT_NO_SXE
 
         client->sendConnectedEvent(qws_display_spec.constData());
 
