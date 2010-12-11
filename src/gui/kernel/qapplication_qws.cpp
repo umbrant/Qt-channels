@@ -954,13 +954,25 @@ void QWSDisplay::Data::init()
 
 QWSEvent* QWSDisplay::Data::readMore()
 {
+    QWSEvent *event;
+    const char *str;
 #ifdef QT_NO_QWS_MULTIPROCESS
     assert(0);
     return incoming.isEmpty() ? 0 : incoming.takeFirst();
 #else
     if (!csocket) {
-        nbb_print_timestamp("readMore !csocket");
-        return incoming.isEmpty() ? 0 : incoming.takeFirst();
+        event = incoming.isEmpty() ? 0 : incoming.takeFirst();
+        if (!event)
+            return 0;
+        if (event->type == QWSEvent::Mouse) {
+            str = "readMore !csocket - mouse event";
+        } else if (event-type == QWSEvent::Key) {
+            str = "readMore !csocket - key event";
+        } else {
+            str= "readMore !csocket";
+        }
+        nbb_print_timestamp(str);
+        return event;
     }
     // read next event
     if (!current_event) {
