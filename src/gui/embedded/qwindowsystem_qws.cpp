@@ -4129,6 +4129,8 @@ static QList<QWSServer::KeyboardFilter*> *keyFilters = 0;
 void QWSServer::processKeyEvent(int unicode, int keycode, Qt::KeyboardModifiers modifiers,
                                 bool isPress, bool autoRepeat)
 {
+    nbb_print_timestamp("s:keyboard event");
+
     bool block;
     // Don't block the POWER or LIGHT keys
     if ( keycode == Qt::Key_F34 || keycode == Qt::Key_F35 )
