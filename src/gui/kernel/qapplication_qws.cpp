@@ -955,7 +955,7 @@ void QWSDisplay::Data::init()
 QWSEvent* QWSDisplay::Data::readMore()
 {
     QWSEvent *event;
-    const char *str;
+    char *str;
 #ifdef QT_NO_QWS_MULTIPROCESS
     assert(0);
     return incoming.isEmpty() ? 0 : incoming.takeFirst();
@@ -966,7 +966,7 @@ QWSEvent* QWSDisplay::Data::readMore()
             return 0;
         if (event->type == QWSEvent::Mouse) {
             str = "readMore !csocket - mouse event";
-        } else if (event-type == QWSEvent::Key) {
+        } else if (event->type == QWSEvent::Key) {
             str = "readMore !csocket - key event";
         } else {
             str= "readMore !csocket";
