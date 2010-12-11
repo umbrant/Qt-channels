@@ -962,6 +962,7 @@ QWSEvent* QWSDisplay::Data::readMore()
 #else
     if (!csocket) {
         event = incoming.isEmpty() ? 0 : incoming.takeFirst();
+#if 0
         if (!event)
             return 0;
         if (event->type == QWSEvent::Mouse) {
@@ -971,12 +972,15 @@ QWSEvent* QWSDisplay::Data::readMore()
         } else {
             str= "readMore !csocket";
         }
+#endif
+        str= "readMore !csocket";
         nbb_print_timestamp(str);
         return event;
     }
     // read next event
+    int event_type = -1;
     if (!current_event) {
-        int event_type = qws_read_uint(csocket);
+        event_type = qws_read_uint(csocket);
 
         if (event_type >= 0) {
             current_event = QWSEvent::factory(event_type);
@@ -988,7 +992,15 @@ QWSEvent* QWSDisplay::Data::readMore()
             // Finished reading a whole event.
             QWSEvent* result = current_event;
             current_event = 0;
-            nbb_print_timestamp("readMore currentEvent");
+
+            if (event_type == QWSEvent::Mouse) {
+                str = "readMore currentEvent - mouse event";
+            } else if (event_type == QWSEvent::Key) {
+                str = "readMore currentEvent - key event";
+            } else {
+                str= "readMore currentEvent";
+            }
+            nbb_print_timestamp(str);
             return result;
         }
     }
