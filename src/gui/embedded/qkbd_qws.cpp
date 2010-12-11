@@ -41,6 +41,7 @@
 
 #include "qkbd_qws.h"
 #include "qkbd_qws_p.h"
+#include "nbb.h"
 
 #ifndef QT_NO_QWS_KEYBOARD
 

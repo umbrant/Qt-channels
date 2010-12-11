@@ -47,6 +47,7 @@
 #include "qfile.h"
 #include "qdebug.h"
 #include "qscreen_qws.h"
+#include "nbb.h"
 
 QT_BEGIN_NAMESPACE
 
