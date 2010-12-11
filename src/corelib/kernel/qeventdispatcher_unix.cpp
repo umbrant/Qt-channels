@@ -345,7 +345,7 @@ int QEventDispatcherUNIXPrivate::doSelect(QEventLoop::ProcessEventsFlags flags, 
         // on the the return value of select().
         if (nsel > 0 && FD_ISSET(self_pipe[READ_END], &sn_vec[0].select_fds)) {
             // Comment this out when it works...
-            qDebug() << __func__ << ": Got input from self-pipe...";
+            // qDebug() << __func__ << ": Got input from self-pipe...";
 
             // Consume all the bytes in the self-pipe and call handle events
             // read() is non-blocking as set above
@@ -1138,7 +1138,7 @@ void QEventDispatcherUNIX::flush()
 void QCoreApplication::watchUnixSignal(int sig, bool watch)
 {
     if(!watch) {
-        printf("watchUnixSignal: %d\n", sig);
+        //printf("watchUnixSignal: %d\n", sig);
     }
     if (sig < NSIG) {
         struct sigaction sa;

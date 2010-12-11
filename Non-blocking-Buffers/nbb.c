@@ -788,5 +788,5 @@ void nbb_print_timestamp(char* str) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     unsigned long long nsec = ts.tv_nsec + (1000000000*ts.tv_sec);
-    fprintf(stderr, "Timestamp from %s: %lld\n", str, nsec);
+    fprintf(stderr, "Timestamp %s: %lld\n", str, nsec);
 }

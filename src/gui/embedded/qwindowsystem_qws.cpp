@@ -825,21 +825,21 @@ int QWSClient::socket() const
 */
 void QWSClient::sendEvent(QWSEvent* event)
 {
-    std::cout << "QWSClient::sendEvent" << std::endl; 
+    //std::cout << "QWSClient::sendEvent" << std::endl; 
 #ifndef QT_NO_QWS_MULTIPROCESS
     if (csocket) {
-        std::cout << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state() << std::endl;
+        //std::cout << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state() << std::endl;
         // qDebug() << "QWSClient::sendEvent type " << event->type << " socket state " << csocket->state();
         if ((QAbstractSocket::SocketState)(csocket->state()) == QAbstractSocket::ConnectedState) {
-            std::cout << "QWSClient::sendEvent event->write(csocket)" << std::endl;
-            nbb_print_timestamp("QWSClient::sendEvent");
+          //  std::cout << "QWSClient::sendEvent event->write(csocket)" << std::endl;
+            nbb_print_timestamp("sendEvent");
             event->write(csocket);
         }
     }
     else
 #endif
     { 
-        std::cout << "QWSClient::sendEvent qt_client_enqueue\n";
+        //std::cout << "QWSClient::sendEvent qt_client_enqueue\n";
         qt_client_enqueue(event);
     }
 }
