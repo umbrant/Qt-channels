@@ -1,4 +1,5 @@
 #include "../nbb.h"
+
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -11,36 +12,14 @@ static const char count_str[] = "count: ";
 static const char sec_str[] = "time_sec: ";
 static const char nsec_str[] = "time_nsec: ";
 
-static void on_new_connection(int slot_id, void *arg)
+void on_new_connection(int slot_id, void *arg)
 {
   printf("GUI got new connection on slot %d\n", slot_id);
 }
 
-static void nbb_log(int slot_id)
+void nbb_log(int slot_id)
 {
-  static int count = 0;
-  static struct timespec time;
-
-  clock_gettime(CLOCK_MONOTONIC, &time);
-  FILE* pFile = fopen(FILE_NAME, "w+");
-
-  if(pFile == NULL) {
-    perror("! File\n");
-  }
-
-  fprintf(pFile, "%s", count_str);
-  fprintf(pFile, "%d", count);
- 
-  fprintf(pFile, "%s", sec_str);
-  //fprintf(pFile. "%d", sec);
- 
-  fprintf(pFile, "%s", nsec_str);
-  //fprintf(pFile. "%d", nsec); 
-
-  printf("%s %d\n %s %ld\n %s %ld \n", count_str, count, sec_str, time.tv_sec, nsec_str, time.tv_nsec);
-
-  count++;
-  fclose(pFile);
+	nbb_print_timestamp("New data");
 }
 
 int main() 

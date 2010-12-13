@@ -1,9 +1,10 @@
 #include "../nbb.h"
+
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
-#define MSG_LEN 50
 #define CLOCK_MONOTONIC 1
 #define FILE_NAME "nbb_client_benchmark.log"
 
@@ -11,40 +12,42 @@ static const char count_str[] = "count: ";
 static const char sec_str[] = "time_sec: ";
 static const char nsec_str[] = "time_nsec: ";
 
-void nbb_log(struct timespec time)
+void usage()
 {
-  static int count = 0;
-  long sec = time.tv_sec;
-  long nsec = time.tv_nsec;
-
-  FILE* pFile = fopen(FILE_NAME, "w+");
-  if(pFile == NULL) {
-    perror("! File\n");
-  }
-
-/*
-  fprintf(pFile, "%s", count_str);
-  fprintf(pFile, "%d", count);
-
-  fprintf(pFile, "%s", sec_str);
-  //fprintf(pFile. "%d", sec);
-
-  fprintf(pFile, "%s", nsec_str);
-  //fprintf(pFile. "%d", nsec); 
-*/
-
-  printf("%s %d\n %s %ld\n %s %ld\n", count_str, count, sec_str, sec, nsec_str, nsec);
-
-  count++;
-  fclose(pFile); 
+	printf("./client_benchmark -l <message length>\n");
+	return;
 }
 
-int main() 
+int main(int argc, char** argv) 
 {
-  char* service_name = (char*)malloc(sizeof(char)*50);
-  char* client_name = (char*)malloc(sizeof(char)*50);
+	int length;
+	int opt;
 
-	char msg[MSG_LEN] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	if (argc != 3) {
+		usage();
+		return 1;
+	}
+
+	while((opt = getopt(argc, argv, "l:")) != -1) {
+		switch (opt) {
+			case 'l':
+				length = atoi(optarg);
+				break;
+			default:
+				usage();
+				return 1;
+		}
+	}
+
+  char* service_name = (char*)malloc(sizeof(char)* (strlen(NBB_GUI)+1));
+  char* client_name = (char*)malloc(sizeof(char) * (strlen("Client")+1));
+	char msg[length];
+
+	int i;
+	for(i=0;i<length;i++) {
+		msg[i] = 'a';
+	}
+
   struct timespec time;
 
   strcpy(service_name, NBB_GUI); 
@@ -56,10 +59,9 @@ int main()
 	}
 
   while(1) {
-    clock_gettime(CLOCK_MONOTONIC, &time);
-    nbb_send(service_name, msg, MSG_LEN); 
+		nbb_print_timestamp("Client");
+    nbb_send(service_name, msg, length); 
 
-    nbb_log(time);
     sleep(1);
   }
 
