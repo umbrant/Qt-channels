@@ -58,11 +58,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-  while(1) {
-		nbb_print_timestamp("Client");
-    nbb_send(service_name, msg, length); 
+	nbb_print_timestamp("Client");
 
-    sleep(1);
+	for(i=0;i<30;i++) {
+    nbb_send(service_name, msg, length); 
   }
 
   return 0;

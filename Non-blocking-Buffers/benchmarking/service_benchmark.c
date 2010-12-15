@@ -12,6 +12,8 @@ static const char count_str[] = "count: ";
 static const char sec_str[] = "time_sec: ";
 static const char nsec_str[] = "time_nsec: ";
 
+static int i=0;
+
 void on_new_connection(int slot_id, void *arg)
 {
   printf("GUI got new connection on slot %d\n", slot_id);
@@ -19,7 +21,10 @@ void on_new_connection(int slot_id, void *arg)
 
 void nbb_log(int slot_id)
 {
-	nbb_print_timestamp("New data");
+	i++;
+/*	char array[1024];
+	int size = nbb_read_bytes(slot_id, array,1024);
+	printf("size: %d, array: %s\n",size, array);*/
 }
 
 int main() 
@@ -37,5 +42,8 @@ int main()
   nbb_set_cb_new_connection(service_name, on_new_connection, NULL);
   nbb_set_cb_new_data(service_name, nbb_log);
 
-  while(1);
+  while(1) {
+		if(i==30) break;
+	}
+	nbb_print_timestamp("Server");
 }
