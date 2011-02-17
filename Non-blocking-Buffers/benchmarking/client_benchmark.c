@@ -39,8 +39,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-  char* service_name = (char*)malloc(sizeof(char)* (strlen(NBB_GUI)+1));
-  char* client_name = (char*)malloc(sizeof(char) * (strlen("Client")+1));
+    char* service_name = (char*)malloc(sizeof(char)* (strlen(NBB_GUI)+1));
+    char* client_name = (char*)malloc(sizeof(char) * (strlen("Client")+1));
 	char msg[length];
 
 	int i;
@@ -48,10 +48,10 @@ int main(int argc, char** argv)
 		msg[i] = 'a';
 	}
 
-  struct timespec time;
+    struct timespec time;
 
-  strcpy(service_name, NBB_GUI); 
-  strcpy(client_name, "Client");
+    strcpy(service_name, NBB_GUI); 
+    strcpy(client_name, "Client");
 
 	if(nbb_connect_service(client_name, service_name) < 0) {
 		printf("Error getting channel!\n");
@@ -60,9 +60,14 @@ int main(int argc, char** argv)
 
 	nbb_print_timestamp("Client");
 
-	for(i=0;i<30;i++) {
-    nbb_send(service_name, msg, length); 
-  }
+    int ret = -1;
+    int total = (1<<20)*10; // 10 MB of data
+    int num = total / length;
+	for(i=0;i<10000;i++) {
+	    do {
+            ret = nbb_send(service_name, msg, length); 
+        } while(ret != OK);
+    }
 
-  return 0;
+    return 0;
 }

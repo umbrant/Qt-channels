@@ -311,8 +311,13 @@ int nbb_write_bytes(int slot_id, const char* msg, size_t msg_len)
 
   assert(slot_id >= 0 && slot_id < SERVICE_MAX_CHANNELS && "Process not found");
 
-  nbb_insert_item(slot_id, msg, msg_len);
-  kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
+  int ret;
+  ret = nbb_insert_item(slot_id, msg, msg_len);
+  if(ret == OK) {
+    kill(connected_nodes[slot_id].pid, NBB_SIGNAL);
+  } else {
+      return ret;
+  }
 
   return 0;
 }
@@ -576,7 +581,6 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
   int new_size = buffer->len + size;
 
   // Grow the buffer if exceeding current capacity
-#if 0
   if (new_size > buffer->capacity) {
     // Initial capacity (2 * MAX_MSG_LEN)
     if (buffer->capacity == 0) {
@@ -590,7 +594,6 @@ void nbb_flush_shm(int slot, char* array_to_flush, int size)
     buffer->capacity = new_buffer_capacity;
   }
 
-#endif
 
   // Append new data to the end (or beginning if it's the first flush)
   memcpy(buffer->content + buffer->len, array_to_flush, size);
